@@ -6,7 +6,7 @@
 
 using namespace std;
 
-const float PLAYER_MOVE_SPEED = 5.0f;
+const int FRAMERATE_CAP = 60;
 
 void processEvents(bool& isRunning);
 
@@ -53,12 +53,12 @@ int main(int argc, char** argv) {
 
         // framerate cap
         deltaTime = SDL_GetTicks() - startTime;
-        SDL_Delay(1000 / 60 - deltaTime);
+        SDL_Delay(1000 / FRAMERATE_CAP - deltaTime);
 
         // show framerate
         deltaTime = SDL_GetTicks() - startTime;
         stringstream title;
-        title << "Pong - " << (deltaTime == 0? 60 : 1000 / deltaTime) << " fps";
+        title << "Pong - " << (deltaTime == 0? FRAMERATE_CAP : 1000 / deltaTime) << " fps";
         SDL_WM_SetCaption(title.str().c_str(), "");
     }
 
