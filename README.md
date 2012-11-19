@@ -1,4 +1,4 @@
-north-american-ninja
-====================
+pong
+====
 
 A simple pong game to demonstrate assembly code in a C++ program
