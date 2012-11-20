@@ -7,6 +7,7 @@
 using namespace std;
 
 const int FRAMERATE_CAP = 60;
+const int MILLISECONDS_CAP = 1000 / FRAMERATE_CAP;
 
 void processEvents(bool& isRunning);
 
@@ -34,11 +35,17 @@ int main(int argc, char** argv) {
     cin.get();
 
     // initialization
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) // 0 success, -1 failure
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) // 0 success, -1 failure
         return EXIT_FAILURE;
-    SDL_Surface* screen = SDL_SetVideoMode(800, 600, 32, SDL_HWSURFACE | SDL_ANYFORMAT | SDL_DOUBLEBUF);
+    SDL_Surface* screen = SDL_SetVideoMode(800, 600, 32, SDL_HWSURFACE | SDL_DOUBLEBUF);
     if (screen == 0)
         return EXIT_FAILURE;
+
+    SDL_Rect rect;
+    rect.x = 100;
+    rect.y = 50;
+    rect.w = 4;
+    rect.h = 4;
 
     // main loop
     Uint32 startTime;
@@ -49,20 +56,20 @@ int main(int argc, char** argv) {
 
         // update
         processEvents(isRunning);
+        ++rect.x;
 
         // draw
         // TODO: implement assembly drawing routines
-        SDL_Rect rect;
-        rect.x = 100;
-        rect.y = 50;
-        rect.w = 4;
-        rect.h = 4;
+        SDL_FillRect(screen, 0, 0); // clear screen
+
         SDL_FillRect(screen, &rect, SDL_MapRGB(screen->format, 255, 0, 0));
-        SDL_Flip(screen);
+
+        SDL_Flip(screen); // flip buffers
 
         // framerate cap
         deltaTime = SDL_GetTicks() - startTime;
-        SDL_Delay(1000 / FRAMERATE_CAP - deltaTime);
+        if (MILLISECONDS_CAP > deltaTime)
+            SDL_Delay(MILLISECONDS_CAP - deltaTime);
 
         // show framerate
         deltaTime = SDL_GetTicks() - startTime;
