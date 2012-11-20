@@ -28,14 +28,12 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
-#include <SDL.h>
+#include <SDL/SDL.h>
 
 using namespace std;
 
 // constants
 const double PI = 3.1415926535897932384626433832795028841971693993751058;
-const double HALF_PI = PI * 0.5;
-const double QUARTER_PI = HALF_PI * 0.5;
 
 const int WINDOW_WIDTH = 640;
 const int WINDOW_HEIGHT = 480;
@@ -51,7 +49,7 @@ const size_t BALL_RADIUS = VIRTUAL_SCREEN_WIDTH / 40;
 const size_t PLAYER_WIDTH = VIRTUAL_SCREEN_WIDTH / 40;
 const size_t PLAYER_HEIGHT = VIRTUAL_SCREEN_HEIGHT / 8;
 
-const double BALL_SPEED = 1.0;
+const double BALL_SPEED_INCREASE = 0.1;
 const double PLAYER_SPEED = 3.0;
 
 const size_t PLAYER1_POSITION_X = 8;
@@ -67,6 +65,8 @@ const unsigned int PLAYER2_COLOR = 0x2222aa;
 void processEventsSDL(bool& isRunning);
 void resetEverything();
 void update();
+bool hasBallCollidedPlayer1();
+bool hasBallCollidedPlayer2();
 void drawPixelSDL(const size_t posX, const size_t posY, const unsigned int color);
 void drawBall(const size_t posX, const size_t posY, const size_t radius, const unsigned int color);
 void drawRacket(const size_t posX, const size_t posY, const size_t w, const size_t h, const unsigned int color);
@@ -74,11 +74,13 @@ void drawEverything();
 
 // global variables
 SDL_Surface* g_screen = 0;
-double g_player1Pos = (VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT) / 2;
-double g_player2Pos = g_player1Pos;
+double g_player1PosY = (VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT) / 2;
+double g_player2PosY = g_player1PosY;
 double g_ballPosX = VIRTUAL_SCREEN_WIDTH / 2;
 double g_ballPosY = VIRTUAL_SCREEN_HEIGHT / 2;
+double g_ballSpeed = 1.0;
 double g_ballAngle = 0.0;
+bool g_isGameOver = false;
 
 bool g_isKeyDownW = false;
 bool g_isKeyDownS = false;
@@ -216,45 +218,108 @@ void processEventsSDL(bool& isRunning) {
 }
 
 void resetEverything() {
-    g_player1Pos = (VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT) / 2;
-    g_player2Pos = g_player1Pos;
+    g_player1PosY = (VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT) / 2;
+    g_player2PosY = g_player1PosY;
     g_ballPosX = VIRTUAL_SCREEN_WIDTH / 2;
     g_ballPosY = VIRTUAL_SCREEN_HEIGHT / 2;
-    g_ballAngle = double(rand()) / double(RAND_MAX) * HALF_PI - QUARTER_PI;
+    g_ballSpeed = 1.0;
+    g_ballAngle = double(rand()) / double(RAND_MAX) * PI * 0.5 - PI * 0.25;
     if (rand() % 2 == 0)
         g_ballAngle += PI;
+    g_isGameOver = false;
 }
 
 void update() {
     // update players
     if (g_isKeyDownW) {
-        g_player1Pos -= PLAYER_SPEED;
-        if (g_player1Pos < 0.0)
-            g_player1Pos = 0.0;
+        g_player1PosY -= PLAYER_SPEED;
+        if (g_player1PosY < 0.0)
+            g_player1PosY = 0.0;
     }
     if (g_isKeyDownS) {
-        g_player1Pos += PLAYER_SPEED;
-        if (g_player1Pos > VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT)
-            g_player1Pos = VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT;
+        g_player1PosY += PLAYER_SPEED;
+        if (g_player1PosY > VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT)
+            g_player1PosY = VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT;
     }
     if (g_isKeyDownUP) {
-        g_player2Pos -= PLAYER_SPEED;
-        if (g_player2Pos < 0.0)
-            g_player2Pos = 0.0;
+        g_player2PosY -= PLAYER_SPEED;
+        if (g_player2PosY < 0.0)
+            g_player2PosY = 0.0;
     }
     if (g_isKeyDownDOWN) {
-        g_player2Pos += PLAYER_SPEED;
-        if (g_player2Pos > VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT)
-            g_player2Pos = VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT;
+        g_player2PosY += PLAYER_SPEED;
+        if (g_player2PosY > VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT)
+            g_player2PosY = VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT;
     }
 
     // update ball
-    g_ballPosX += BALL_SPEED * cos(g_ballAngle);
-    g_ballPosY -= BALL_SPEED * sin(g_ballAngle);
+    g_ballPosX += g_ballSpeed * cos(g_ballAngle);
+    g_ballPosY -= g_ballSpeed * sin(g_ballAngle);
 
     // check ball collisions with players
+    double distX, distY;
+    if (hasBallCollidedPlayer1() && g_ballPosX > PLAYER1_POSITION_X) {
+        distY = g_player1PosY + PLAYER_HEIGHT / 2 - g_ballPosY;
+        distX = g_ballPosX;
+        g_ballAngle = atan(distY / distX);
+        g_ballSpeed += BALL_SPEED_INCREASE;
+    }
+    else if (hasBallCollidedPlayer2() && g_ballPosX < PLAYER2_POSITION_X + PLAYER_WIDTH) {
+        distY = g_player2PosY + PLAYER_HEIGHT / 2 - g_ballPosY;
+        distX = VIRTUAL_SCREEN_WIDTH - g_ballPosX;
+        g_ballAngle = PI - atan(distY / distX);
+        g_ballSpeed += BALL_SPEED_INCREASE;
+    }
+    else if (g_ballPosY < BALL_RADIUS || g_ballPosY > VIRTUAL_SCREEN_HEIGHT - BALL_RADIUS)
+        g_ballAngle = -g_ballAngle;
 
     // check win conditions
+    if (!g_isGameOver) {
+        if (g_ballPosX >= VIRTUAL_SCREEN_WIDTH - BALL_RADIUS) {
+            cout << "Ganador: jugador 1" << endl;
+            g_isGameOver = true;
+        }
+        else if (g_ballPosX <= BALL_RADIUS) {
+            cout << "Ganador: jugador 2" << endl;
+            g_isGameOver = true;
+        }
+    }
+}
+
+bool hasBallCollidedPlayer1() {
+    if (g_ballPosX - BALL_RADIUS < PLAYER1_POSITION_X + PLAYER_WIDTH + 1) {
+        if (g_ballPosY >= g_player1PosY && g_ballPosY <= g_player1PosY + PLAYER_HEIGHT) // racket 1 body
+            return true;
+        double radiusSqr = BALL_RADIUS * BALL_RADIUS;
+        double distX = PLAYER1_POSITION_X + PLAYER_WIDTH - g_ballPosX;
+        double distY = g_player1PosY - g_ballPosY;
+        double distSqr = distX * distX + distY * distY;
+        if (distSqr <= radiusSqr) // racket 1 upper corner
+            return true;
+        distY = g_player1PosY + PLAYER_HEIGHT - g_ballPosY;
+        distSqr = distX * distX + distY * distY;
+        if (distSqr <= radiusSqr) // racket 1 lower corner
+            return true;
+    }
+    return false;
+}
+
+bool hasBallCollidedPlayer2() {
+    if (g_ballPosX + BALL_RADIUS > PLAYER2_POSITION_X - 1) {
+        if (g_ballPosY >= g_player2PosY && g_ballPosY <= g_player2PosY + PLAYER_HEIGHT) // racket 2 body
+            return true;
+        double radiusSqr = BALL_RADIUS * BALL_RADIUS;
+        double distX = PLAYER2_POSITION_X - g_ballPosX;
+        double distY = g_player2PosY - g_ballPosY;
+        double distSqr = distX * distX + distY * distY;
+        if (distSqr <= radiusSqr) // racket 2 upper corner
+            return true;
+        distY = g_player2PosY + PLAYER_HEIGHT - g_ballPosY;
+        distSqr = distX * distX + distY * distY;
+        if (distSqr <= radiusSqr) // racket 2 lower corner
+            return true;
+    }
+    return false;
 }
 
 void drawPixelSDL(const size_t posX, const size_t posY, const unsigned int color) {
@@ -308,7 +373,7 @@ void drawRacket(const size_t posX, const size_t posY, const size_t w, const size
 }
 
 void drawEverything() {
-    drawRacket(PLAYER1_POSITION_X, g_player1Pos, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER1_COLOR);
-    drawRacket(PLAYER2_POSITION_X, g_player2Pos, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER2_COLOR);
+    drawRacket(PLAYER1_POSITION_X, g_player1PosY, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER1_COLOR);
+    drawRacket(PLAYER2_POSITION_X, g_player2PosY, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER2_COLOR);
     drawBall(g_ballPosX, g_ballPosY, BALL_RADIUS, BALL_COLOR);
 }
