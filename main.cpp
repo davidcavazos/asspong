@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
         processEvents(isRunning);
 
         // draw
+        // TODO: implement assembly drawing routines
 
         // framerate cap
         deltaTime = SDL_GetTicks() - startTime;
