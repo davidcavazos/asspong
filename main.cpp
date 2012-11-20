@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
         rect.y = 50;
         rect.w = 4;
         rect.h = 4;
-//         SDL_FillRect(screen, &rect, SDL_MapRGB(screen->format, 255, 0, 0));
+        SDL_FillRect(screen, &rect, SDL_MapRGB(screen->format, 255, 0, 0));
         SDL_Flip(screen);
 
         // framerate cap
