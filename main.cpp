@@ -36,7 +36,8 @@ int main(int argc, char** argv) {
     // initialization
     if (SDL_Init(SDL_INIT_VIDEO) != 0) // 0 success, -1 failure
         return EXIT_FAILURE;
-    if (SDL_SetVideoMode(800, 600, 32, SDL_HWSURFACE | SDL_ANYFORMAT | SDL_OPENGL | SDL_DOUBLEBUF) == 0)
+    SDL_Surface* screen = SDL_SetVideoMode(800, 600, 32, SDL_HWSURFACE | SDL_ANYFORMAT | SDL_DOUBLEBUF);
+    if (screen == 0)
         return EXIT_FAILURE;
 
     // main loop
@@ -50,6 +51,13 @@ int main(int argc, char** argv) {
         processEvents(isRunning);
 
         // draw
+        SDL_Rect rect;
+        rect.x = 100;
+        rect.y = 50;
+        rect.w = 4;
+        rect.h = 4;
+        SDL_FillRect(screen, &rect, SDL_MapRGB(screen->format, 255, 0, 0));
+        SDL_Flip(screen);
 
         // framerate cap
         deltaTime = SDL_GetTicks() - startTime;
