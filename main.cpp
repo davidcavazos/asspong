@@ -35,8 +35,8 @@ using namespace std;
 // constants
 const double PI = 3.1415926535897932384626433832795028841971693993751058;
 
-const int WINDOW_WIDTH = 640;
-const int WINDOW_HEIGHT = 480;
+const int WINDOW_WIDTH = 800;
+const int WINDOW_HEIGHT = 600;
 
 const int FRAMERATE_CAP = 60;
 const int MILLISECONDS_CAP = 1000 / FRAMERATE_CAP;
@@ -49,8 +49,8 @@ const size_t BALL_RADIUS = VIRTUAL_SCREEN_WIDTH / 40;
 const size_t PLAYER_WIDTH = VIRTUAL_SCREEN_WIDTH / 40;
 const size_t PLAYER_HEIGHT = VIRTUAL_SCREEN_HEIGHT / 8;
 
-const double BALL_SPEED_INCREASE = 0.1;
-const double PLAYER_SPEED = 3.0;
+const double BALL_SPEED_INCREASE = VIRTUAL_SCREEN_WIDTH * 0.001;
+const double PLAYER_SPEED = VIRTUAL_SCREEN_WIDTH * 0.02;
 
 const size_t PLAYER1_POSITION_X = 8;
 const size_t PLAYER2_POSITION_X = VIRTUAL_SCREEN_WIDTH - PLAYER1_POSITION_X - PLAYER_WIDTH;
@@ -74,18 +74,18 @@ void drawEverything();
 
 // global variables
 SDL_Surface* g_screen = 0;
-double g_player1PosY = (VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT) / 2;
-double g_player2PosY = g_player1PosY;
-double g_ballPosX = VIRTUAL_SCREEN_WIDTH / 2;
-double g_ballPosY = VIRTUAL_SCREEN_HEIGHT / 2;
-double g_ballSpeed = 1.0;
-double g_ballAngle = 0.0;
-bool g_isGameOver = false;
+double g_player1PosY;
+double g_player2PosY;
+double g_ballPosX;
+double g_ballPosY;
+double g_ballSpeed;
+double g_ballAngle;
+bool g_isGameOver;
 
-bool g_isKeyDownW = false;
-bool g_isKeyDownS = false;
-bool g_isKeyDownUP = false;
-bool g_isKeyDownDOWN = false;
+bool g_isKeyDownW;
+bool g_isKeyDownS;
+bool g_isKeyDownUP;
+bool g_isKeyDownDOWN;
 
 
 
@@ -222,11 +222,16 @@ void resetEverything() {
     g_player2PosY = g_player1PosY;
     g_ballPosX = VIRTUAL_SCREEN_WIDTH / 2;
     g_ballPosY = VIRTUAL_SCREEN_HEIGHT / 2;
-    g_ballSpeed = 1.0;
+    g_ballSpeed = VIRTUAL_SCREEN_WIDTH * 0.008;
     g_ballAngle = double(rand()) / double(RAND_MAX) * PI * 0.5 - PI * 0.25;
     if (rand() % 2 == 0)
         g_ballAngle += PI;
     g_isGameOver = false;
+
+    g_isKeyDownW = false;
+    g_isKeyDownS = false;
+    g_isKeyDownUP = false;
+    g_isKeyDownDOWN = false;
 }
 
 void update() {
