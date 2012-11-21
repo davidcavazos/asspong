@@ -104,12 +104,12 @@ int main(int argc, char** argv) {
     cout << "Corona Garcia Erick Daniel" << endl;
     cout << endl;
     cout << "Instrucciones:" << endl;
-    cout << "[ESC]  Salir" << endl;
-    cout << "[r]    Reset" << endl;
-    cout << "[w]    Mover jugador 1 arriba" << endl;
-    cout << "[s]    Mover jugador 1 abajo" << endl;
-    cout << "[UP]   Mover jugador 2 arriba" << endl;
-    cout << "[DOWN] Mover jugador 2 abajo" << endl;
+    cout << "[ESC]   Salir" << endl;
+    cout << "[SPACE] Reset" << endl;
+    cout << "[w]     Mover jugador 1 arriba" << endl;
+    cout << "[s]     Mover jugador 1 abajo" << endl;
+    cout << "[UP]    Mover jugador 2 arriba" << endl;
+    cout << "[DOWN]  Mover jugador 2 abajo" << endl;
     cout << endl;
     cout << "Presione [Enter] para continuar...";
     cin.get();
@@ -192,7 +192,7 @@ void processEventsSDL(bool& isRunning) {
                 isRunning = false;
                 break;
             // reset
-            case SDLK_r:
+            case SDLK_SPACE:
                 resetEverything();
                 break;
 
