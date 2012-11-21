@@ -81,6 +81,8 @@ double g_ballPosY;
 double g_ballSpeed;
 double g_ballAngle;
 bool g_isGameOver;
+size_t g_player1Wins;
+size_t g_player2Wins;
 
 bool g_isKeyDownW;
 bool g_isKeyDownS;
@@ -122,6 +124,14 @@ int main(int argc, char** argv) {
     srand(time(0));
     resetEverything();
 
+    g_player1Wins = 0;
+    g_player2Wins = 0;
+
+    g_isKeyDownW = false;
+    g_isKeyDownS = false;
+    g_isKeyDownUP = false;
+    g_isKeyDownDOWN = false;
+
     // main loop
     Uint32 startTime;
     Uint32 deltaTime;
@@ -149,6 +159,16 @@ int main(int argc, char** argv) {
         title << "Pong - " << (deltaTime == 0? FRAMERATE_CAP : 1000 / deltaTime) << " fps";
         SDL_WM_SetCaption(title.str().c_str(), "");
     }
+
+    // show winner
+    cout << endl;
+    if (g_player1Wins == g_player2Wins)
+        cout << "Empate: ";
+    else if (g_player1Wins > g_player2Wins)
+        cout << "Ganador: Jugador 1 ";
+    else
+        cout << "Ganador: Jugador 2 ";
+    cout << "(" << g_player1Wins << " : " << g_player2Wins << ")" << endl;
 
     // shutdown
     SDL_Quit();
@@ -226,12 +246,8 @@ void resetEverything() {
     g_ballAngle = double(rand()) / double(RAND_MAX) * PI * 0.5 - PI * 0.25;
     if (rand() % 2 == 0)
         g_ballAngle += PI;
-    g_isGameOver = false;
 
-    g_isKeyDownW = false;
-    g_isKeyDownS = false;
-    g_isKeyDownUP = false;
-    g_isKeyDownDOWN = false;
+    g_isGameOver = false;
 }
 
 void update() {
@@ -281,12 +297,14 @@ void update() {
     // check win conditions
     if (!g_isGameOver) {
         if (g_ballPosX >= VIRTUAL_SCREEN_WIDTH - BALL_RADIUS) {
-            cout << "Ganador: jugador 1" << endl;
+            cout << "Jugador 1" << endl;
             g_isGameOver = true;
+            ++g_player1Wins;
         }
         else if (g_ballPosX <= BALL_RADIUS) {
-            cout << "Ganador: jugador 2" << endl;
+            cout << "Jugador 2" << endl;
             g_isGameOver = true;
+            ++g_player2Wins;
         }
     }
 }
