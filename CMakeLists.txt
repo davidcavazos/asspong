@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
-project(pong)
+project(asspong)
 
-set(EXE_NAME pong)
+set(EXE_NAME asspong)
 
 # Target
 set(SRC_FILES
