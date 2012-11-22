@@ -25,14 +25,14 @@
 
 
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
 #include <SDL/SDL.h>
-#include <AL/al.h>
-#include <AL/alc.h>
+#include <SDL/SDL_mixer.h>
 
 using namespace std;
 
@@ -62,6 +62,10 @@ const size_t PLAYER2_POSITION_X = VIRTUAL_SCREEN_WIDTH - PLAYER1_POSITION_X - PL
 const unsigned int BALL_COLOR =    0xaa2222;
 const unsigned int PLAYER1_COLOR = 0x22aa22;
 const unsigned int PLAYER2_COLOR = 0x2222aa;
+
+const int AUDIO_FREQUENCY = 44100;
+const int AUDIO_CHANNELS = 2; // stereo
+const int AUDIO_BUFFER_SIZE = 4096;
 
 
 
@@ -94,6 +98,7 @@ bool g_isKeyDownS;
 bool g_isKeyDownUP;
 bool g_isKeyDownDOWN;
 
+Mix_Music* g_music;
 
 
 // main function
@@ -121,14 +126,22 @@ int main(int argc, char** argv) {
 
     // SDL initialization
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) { // 0 success, -1 failure
-        cout << "Unable to initialize SDL" << endl;
+        cerr << "Unable to initialize SDL: " << SDL_GetError() << endl;
         return EXIT_FAILURE;
     }
     g_screen = SDL_SetVideoMode(WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_HWSURFACE | SDL_DOUBLEBUF);
     if (g_screen == 0) {
-        cout << "Unable to create SDL video context" << endl;
+        cerr << "Unable to create SDL video context: " << SDL_GetError() << endl;
         return EXIT_FAILURE;
     }
+
+    // SDL_mixer initialization
+    Mix_OpenAudio(AUDIO_FREQUENCY, MIX_DEFAULT_FORMAT, AUDIO_CHANNELS, AUDIO_BUFFER_SIZE);
+    g_music = Mix_LoadMUS("still_alive.ogg");
+    if (g_music == 0)
+        cerr << "Unable to load music: " << Mix_GetError() << endl;
+    else
+        Mix_PlayMusic(g_music, -1);
 
     srand(time(0));
     resetEverything();
@@ -165,7 +178,8 @@ int main(int argc, char** argv) {
         // show framerate
         g_deltaTime = (SDL_GetTicks() - startTime) * 0.001;
         stringstream title;
-        title << "Pong - " << (g_deltaTime == 0.0? FRAMERATE_CAP : 1.0 / g_deltaTime) << " fps";
+        title << "Pong - " << setprecision(1) << fixed <<
+                        (g_deltaTime == 0.0? double(FRAMERATE_CAP) : 1.0 / g_deltaTime) << " fps";
         SDL_WM_SetCaption(title.str().c_str(), "");
     }
 
@@ -180,6 +194,8 @@ int main(int argc, char** argv) {
     cout << "(" << g_player1Wins << " : " << g_player2Wins << ")" << endl;
 
     // shutdown
+    Mix_FreeMusic(g_music);
+    Mix_CloseAudio();
     SDL_Quit();
     return EXIT_SUCCESS;
 }

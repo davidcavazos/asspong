@@ -12,6 +12,7 @@ add_executable(${EXE_NAME} ${SRC_FILES})
 
 # Link libraries
 find_package(SDL REQUIRED)
+find_package(SDL_mixer REQUIRED)
 
-include_directories(${SDL_INCLUDE_DIR})
-target_link_libraries(${EXE_NAME} ${SDL_LIBRARY})
+include_directories(${SDL_INCLUDE_DIR} ${SDLMIXER_INCLUDE_DIR})
+target_link_libraries(${EXE_NAME} ${SDL_LIBRARY} ${SDLMIXER_LIBRARY})
