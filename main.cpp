@@ -21,6 +21,8 @@
  *    OTHER DEALINGS IN THE SOFTWARE.
  */
 
+// Music from http://grayscale.scene.pl/msx_archive.php?lang=en
+
 
 #include <iostream>
 #include <sstream>
@@ -29,6 +31,8 @@
 #include <cmath>
 #include <ctime>
 #include <SDL/SDL.h>
+#include <AL/al.h>
+#include <AL/alc.h>
 
 using namespace std;
 
@@ -49,8 +53,8 @@ const size_t BALL_RADIUS = VIRTUAL_SCREEN_WIDTH / 40;
 const size_t PLAYER_WIDTH = VIRTUAL_SCREEN_WIDTH / 40;
 const size_t PLAYER_HEIGHT = VIRTUAL_SCREEN_HEIGHT / 6;
 
-const double BALL_SPEED_INCREASE = VIRTUAL_SCREEN_WIDTH * 0.001;
-const double PLAYER_SPEED = VIRTUAL_SCREEN_WIDTH * 0.02;
+const double BALL_SPEED_INCREASE = VIRTUAL_SCREEN_WIDTH * 0.05;
+const double PLAYER_SPEED = VIRTUAL_SCREEN_WIDTH * 1.5;
 
 const size_t PLAYER1_POSITION_X = VIRTUAL_SCREEN_WIDTH * 0.08;
 const size_t PLAYER2_POSITION_X = VIRTUAL_SCREEN_WIDTH - PLAYER1_POSITION_X - PLAYER_WIDTH;
@@ -74,6 +78,7 @@ void drawEverything();
 
 // global variables
 SDL_Surface* g_screen = 0;
+double g_deltaTime;
 double g_player1PosY;
 double g_player2PosY;
 double g_ballPosX;
@@ -114,16 +119,21 @@ int main(int argc, char** argv) {
     cout << "Presione [Enter] para continuar...";
     cin.get();
 
-    // initialization
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) // 0 success, -1 failure
+    // SDL initialization
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) { // 0 success, -1 failure
+        cout << "Unable to initialize SDL" << endl;
         return EXIT_FAILURE;
+    }
     g_screen = SDL_SetVideoMode(WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_HWSURFACE | SDL_DOUBLEBUF);
-    if (g_screen == 0)
+    if (g_screen == 0) {
+        cout << "Unable to create SDL video context" << endl;
         return EXIT_FAILURE;
+    }
 
     srand(time(0));
     resetEverything();
 
+    g_deltaTime = 0.0;
     g_player1Wins = 0;
     g_player2Wins = 0;
 
@@ -134,7 +144,6 @@ int main(int argc, char** argv) {
 
     // main loop
     Uint32 startTime;
-    Uint32 deltaTime;
     bool isRunning = true;
     while (isRunning) {
         startTime = SDL_GetTicks();
@@ -149,14 +158,14 @@ int main(int argc, char** argv) {
         SDL_Flip(g_screen); // flip buffers
 
         // framerate cap
-        deltaTime = SDL_GetTicks() - startTime;
-        if (MILLISECONDS_CAP > deltaTime)
-            SDL_Delay(MILLISECONDS_CAP - deltaTime);
+        g_deltaTime = SDL_GetTicks() - startTime;
+        if (MILLISECONDS_CAP > g_deltaTime)
+            SDL_Delay(MILLISECONDS_CAP - g_deltaTime);
 
         // show framerate
-        deltaTime = SDL_GetTicks() - startTime;
+        g_deltaTime = (SDL_GetTicks() - startTime) * 0.001;
         stringstream title;
-        title << "Pong - " << (deltaTime == 0? FRAMERATE_CAP : 1000 / deltaTime) << " fps";
+        title << "Pong - " << (g_deltaTime == 0.0? FRAMERATE_CAP : 1.0 / g_deltaTime) << " fps";
         SDL_WM_SetCaption(title.str().c_str(), "");
     }
 
@@ -242,7 +251,7 @@ void resetEverything() {
     g_player2PosY = g_player1PosY;
     g_ballPosX = VIRTUAL_SCREEN_WIDTH / 2;
     g_ballPosY = VIRTUAL_SCREEN_HEIGHT / 2;
-    g_ballSpeed = VIRTUAL_SCREEN_WIDTH * 0.008;
+    g_ballSpeed = VIRTUAL_SCREEN_WIDTH * 0.5;
     g_ballAngle = double(rand()) / double(RAND_MAX) * PI * 0.5 - PI * 0.25;
     if (rand() % 2 == 0)
         g_ballAngle += PI;
@@ -253,29 +262,29 @@ void resetEverything() {
 void update() {
     // update players
     if (g_isKeyDownW) {
-        g_player1PosY -= PLAYER_SPEED;
+        g_player1PosY -= PLAYER_SPEED * g_deltaTime;
         if (g_player1PosY < 0.0)
             g_player1PosY = 0.0;
     }
     if (g_isKeyDownS) {
-        g_player1PosY += PLAYER_SPEED;
+        g_player1PosY += PLAYER_SPEED * g_deltaTime;
         if (g_player1PosY > VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT)
             g_player1PosY = VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT;
     }
     if (g_isKeyDownUP) {
-        g_player2PosY -= PLAYER_SPEED;
+        g_player2PosY -= PLAYER_SPEED * g_deltaTime;
         if (g_player2PosY < 0.0)
             g_player2PosY = 0.0;
     }
     if (g_isKeyDownDOWN) {
-        g_player2PosY += PLAYER_SPEED;
+        g_player2PosY += PLAYER_SPEED * g_deltaTime;
         if (g_player2PosY > VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT)
             g_player2PosY = VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT;
     }
 
     // update ball
-    g_ballPosX += g_ballSpeed * cos(g_ballAngle);
-    g_ballPosY -= g_ballSpeed * sin(g_ballAngle);
+    g_ballPosX += g_ballSpeed * cos(g_ballAngle) * g_deltaTime;
+    g_ballPosY -= g_ballSpeed * sin(g_ballAngle) * g_deltaTime;
 
     // check ball collisions with players
     double distX, distY;
