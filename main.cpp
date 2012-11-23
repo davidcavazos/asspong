@@ -24,6 +24,10 @@
 // Music from http://grayscale.scene.pl/msx_archive.php?lang=en
 
 
+// #define USE_ASM_INSTEAD_OF_SDL
+
+
+
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -35,6 +39,7 @@
 #include <SDL/SDL_mixer.h>
 
 using namespace std;
+
 
 // constants
 const double PI = 3.1415926535897932384626433832795028841971693993751058;
@@ -55,15 +60,18 @@ const int AUDIO_BUFFER_SIZE = 4096;
 
 
 // function prototypes
-void initializeSDL();
-void shutdownSDL();
-void processEventsSDL(bool& isRunning);
+void initialize_SDL_ASM();
+void initializeVideoContext_SDL_ASM();
+void shutdown_SDL_ASM();
+void processEvents_SDL_ASM(bool& isRunning);
+void clearScreen_SDL_ASM();
+void drawPixel_SDL_ASM(const int posX, const int posY, const unsigned int color);
+
 void initializeDimensions();
 void resetEverything();
 void update();
 bool hasBallCollidedPlayer1();
 bool hasBallCollidedPlayer2();
-void drawPixelSDL(const int posX, const int posY, const unsigned int color);
 void drawBall(const int posX, const int posY, const size_t radius, const unsigned int color);
 void drawRacket(const int posX, const int posY, const size_t w, const size_t h, const unsigned int color);
 void drawBackground(const unsigned int color);
@@ -106,32 +114,38 @@ Mix_Music* g_music;
 // main function
 int main(int, char**) {
     // introduction
-    cout << "  CC322 - Organizacion de Computadoras I" << endl;
-    cout << "              .-----------." << endl;
-    cout << "             /   AssPong   \\" << endl;
-    cout << "            '==============='" << endl;
-    cout << endl;
-    cout << "            *** Equipo 9 ***" << endl;
-    cout << "            Cavazos Woo David" << endl;
-    cout << "        Corona Garcia Erick Daniel" << endl;
-    cout << endl;
-    cout << "Instrucciones:" << endl;
-    cout << "[ESC]   Salir" << endl;
-    cout << "[SPACE] Reset" << endl;
-    cout << "[w]     Mover jugador 1 arriba" << endl;
-    cout << "[s]     Mover jugador 1 abajo" << endl;
-    cout << "[UP]    Mover jugador 2 arriba" << endl;
-    cout << "[DOWN]  Mover jugador 2 abajo" << endl;
-    cout << endl;
+    cout << "    +~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+" << endl;
+    cout << "    |               CC322 - Organizacion de Computadoras I                 |" << endl;
+    cout << "    |                            .-----------.                             |" << endl;
+    cout << "    |                           /   AssPong   \\                            |" << endl;
+    cout << "    |                          '==============='                           |" << endl;
+    cout << "    |                                                                      |" << endl;
+    cout << "    |                          *** Equipo 9 ***                            |" << endl;
+    cout << "    |                          Cavazos Woo David                           |" << endl;
+    cout << "    |                      Corona Garcia Erick Daniel                      |" << endl;
+    cout << "    |                                                                      |" << endl;
+    cout << "    |    Instrucciones:                                                    |" << endl;
+    cout << "    |        [ESC]   Salir                                                 |" << endl;
+    cout << "    |        [SPACE] Reset                                                 |" << endl;
+    cout << "    |        [w]     Mover jugador 1 arriba                                |" << endl;
+    cout << "    |        [s]     Mover jugador 1 abajo                                 |" << endl;
+    cout << "    |        [UP]    Mover jugador 2 arriba                                |" << endl;
+    cout << "    |        [DOWN]  Mover jugador 2 abajo                                 |" << endl;
+    cout << "    |                                                                      |" << endl;
+    cout << "    +~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+" << endl;
+
+    initialize_SDL_ASM();
+
     cout << "Presione [Enter] para continuar...";
     cin.get();
-
-    // initialization
-    initializeSDL();
 
     // SDL_mixer initialization
     Mix_OpenAudio(AUDIO_FREQUENCY, MIX_DEFAULT_FORMAT, AUDIO_CHANNELS, AUDIO_BUFFER_SIZE);
     g_music = Mix_LoadMUS("still_alive.ogg");
+
+    initializeVideoContext_SDL_ASM();
+
+    // play music
     if (g_music == 0)
         cerr << "Unable to load music: " << Mix_GetError() << endl;
     else
@@ -157,13 +171,15 @@ int main(int, char**) {
         startTime = SDL_GetTicks();
 
         // update
-        processEventsSDL(isRunning);
+        processEvents_SDL_ASM(isRunning);
         update();
 
         // draw
-        SDL_FillRect(g_screen, 0, CLEAR_COLOR); // clear screen
+        clearScreen_SDL_ASM();
         drawEverything();
+#ifndef USE_ASM_INSTEAD_OF_SDL
         SDL_Flip(g_screen); // flip buffers
+#endif
 
         // framerate cap
         g_deltaTime = SDL_GetTicks() - startTime;
@@ -181,17 +197,20 @@ int main(int, char**) {
     // shutdown
     Mix_FreeMusic(g_music);
     Mix_CloseAudio();
-    shutdownSDL();
+    shutdown_SDL_ASM();
 
     // show winner
     cout << endl;
+    cout << "                       .--------------------------------." << endl;
+    cout << "                      /   ";
     if (g_player1Wins == g_player2Wins)
-        cout << "Empate: ";
+        cout << "  ~~~~ Empate ~~~~ ";
     else if (g_player1Wins > g_player2Wins)
         cout << "Ganador: Jugador 1 ";
     else
         cout << "Ganador: Jugador 2 ";
-    cout << "(" << g_player1Wins << " : " << g_player2Wins << ")" << endl;
+    cout << "(" << setw(2) << g_player1Wins << " : " << setw(2) << g_player2Wins << ")   \\" << endl;
+    cout << "                     '===================================='" << endl;
     cout << "Presione [Enter] para salir...";
     cin.get();
 
@@ -200,12 +219,23 @@ int main(int, char**) {
 
 
 
-void initializeSDL() {
+void initialize_SDL_ASM() {
+#ifdef USE_ASM_INSTEAD_OF_SDL
+    cout << "Using ASM context" << endl;
+#else
+    cout << "Using SDL context" << endl;
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) { // 0 success, -1 failure
         cerr << "Unable to initialize SDL: " << SDL_GetError() << endl;
         exit(EXIT_FAILURE);
     }
+#endif
+}
 
+void initializeVideoContext_SDL_ASM() {
+#ifdef USE_ASM_INSTEAD_OF_SDL
+    g_windowWidth = 800;
+    g_windowHeight = 600;
+#else
     const SDL_VideoInfo* info = SDL_GetVideoInfo();
     g_windowWidth = info->current_w;
     g_windowHeight = info->current_h;
@@ -216,13 +246,20 @@ void initializeSDL() {
         exit(EXIT_FAILURE);
     }
     SDL_ShowCursor(SDL_FALSE);
+#endif
 }
 
-void shutdownSDL() {
+void shutdown_SDL_ASM() {
+#ifdef USE_ASM_INSTEAD_OF_SDL
+#else
     SDL_Quit();
+#endif
 }
 
-void processEventsSDL(bool& isRunning) {
+void processEvents_SDL_ASM(bool& isRunning) {
+#ifdef USE_ASM_INSTEAD_OF_SDL
+    isRunning = false;
+#else
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -289,7 +326,29 @@ void processEventsSDL(bool& isRunning) {
             break;
         }
     }
+#endif
 }
+
+void clearScreen_SDL_ASM() {
+#ifdef USE_ASM_INSTEAD_OF_SDL
+#else
+    SDL_FillRect(g_screen, 0, CLEAR_COLOR);
+#endif
+}
+
+void drawPixel_SDL_ASM(const int posX, const int posY, const unsigned int color) {
+#ifdef USE_ASM_INSTEAD_OF_SDL
+#else
+    SDL_Rect rect;
+    rect.x = Sint16(posX * g_virtualScreenPixelSize);
+    rect.y = Sint16(posY * g_virtualScreenPixelSize);
+    rect.w = Uint16(g_virtualScreenPixelSize);
+    rect.h = Uint16(g_virtualScreenPixelSize);
+    SDL_FillRect(g_screen, &rect, color);
+#endif
+}
+
+
 
 void initializeDimensions() {
     g_virtualScreenPixelSize = g_windowWidth / 128;
@@ -415,15 +474,6 @@ bool hasBallCollidedPlayer2() {
     return false;
 }
 
-void drawPixelSDL(const int posX, const int posY, const unsigned int color) {
-    SDL_Rect rect;
-    rect.x = Sint16(posX * g_virtualScreenPixelSize);
-    rect.y = Sint16(posY * g_virtualScreenPixelSize);
-    rect.w = Uint16(g_virtualScreenPixelSize);
-    rect.h = Uint16(g_virtualScreenPixelSize);
-    SDL_FillRect(g_screen, &rect, color);
-}
-
 void drawBall(const int posX, const int posY, const size_t radius, const unsigned int color) {
     int x, y, p;
 
@@ -432,7 +482,7 @@ void drawBall(const int posX, const int posY, const size_t radius, const unsigne
     int endY = posY + 2 * radius - 2;
     for (y = posY - radius + 1; y < endY; ++y) {
         for (x = posX - radius + 1; x < endX; ++x)
-            drawPixelSDL(x, y, CLEAR_COLOR);
+            drawPixel_SDL_ASM(x, y, CLEAR_COLOR);
     }
 
     // draw circle
@@ -440,14 +490,14 @@ void drawBall(const int posX, const int posY, const size_t radius, const unsigne
     y = radius;
     p = 1 - radius;
     while(x <= y) {
-        drawPixelSDL(posX + x, posY + y, color);
-        drawPixelSDL(posX + x, posY - y, color);
-        drawPixelSDL(posX - x, posY + y, color);
-        drawPixelSDL(posX - x, posY - y, color);
-        drawPixelSDL(posX + y, posY + x, color);
-        drawPixelSDL(posX + y, posY - x, color);
-        drawPixelSDL(posX - y, posY + x, color);
-        drawPixelSDL(posX - y, posY - x, color);
+        drawPixel_SDL_ASM(posX + x, posY + y, color);
+        drawPixel_SDL_ASM(posX + x, posY - y, color);
+        drawPixel_SDL_ASM(posX - x, posY + y, color);
+        drawPixel_SDL_ASM(posX - x, posY - y, color);
+        drawPixel_SDL_ASM(posX + y, posY + x, color);
+        drawPixel_SDL_ASM(posX + y, posY - x, color);
+        drawPixel_SDL_ASM(posX - y, posY + x, color);
+        drawPixel_SDL_ASM(posX - y, posY - x, color);
 
         if(p < 0) {
             ++x;
@@ -466,12 +516,12 @@ void drawRacket(const int posX, const int posY, const size_t w, const size_t h, 
     size_t maxX = posX + w - 1;
     size_t maxY = posY + h - 1;
     for (x = posX; x <= maxX; ++x) {
-        drawPixelSDL(x, posY, color);
-        drawPixelSDL(x, maxY, color);
+        drawPixel_SDL_ASM(x, posY, color);
+        drawPixel_SDL_ASM(x, maxY, color);
     }
     for (y = posY + 1; y <= maxY; ++y) {
-        drawPixelSDL(posX, y, color);
-        drawPixelSDL(maxX, y, color);
+        drawPixel_SDL_ASM(posX, y, color);
+        drawPixel_SDL_ASM(maxX, y, color);
     }
 }
 
@@ -480,12 +530,12 @@ void drawBackground(const unsigned int color) {
     size_t hLineEnd = g_virtualScreenWidth - 1;
     size_t vLineEnd = g_virtualScreenHeight - 2;
     for (size_t i = 1; i < hLineEnd; ++i) {
-        drawPixelSDL(i, 1, color);
-        drawPixelSDL(i, vLineEnd, color);
+        drawPixel_SDL_ASM(i, 1, color);
+        drawPixel_SDL_ASM(i, vLineEnd, color);
     }
     for (size_t i = 2; i < vLineEnd; ++i) {
         if (i % 8 != 0)
-            drawPixelSDL(half, i, color);
+            drawPixel_SDL_ASM(half, i, color);
     }
 }
 
