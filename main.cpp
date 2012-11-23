@@ -420,8 +420,14 @@ void update() {
         g_ballAngle = PI - atan(distY / distX);
         g_ballSpeed += g_ballSpeedIncrease;
     }
-    else if (g_ballPosY < g_ballRadius + 2.0 || g_ballPosY > g_virtualScreenHeight - g_ballRadius - 2.0)
+    else if (g_ballPosY < g_ballRadius + 2.0) {
+        g_ballPosY = g_ballRadius + 2.0;
         g_ballAngle = -g_ballAngle;
+    }
+    else if (g_ballPosY > g_virtualScreenHeight - g_ballRadius - 2.0) {
+        g_ballPosY = g_virtualScreenHeight - g_ballRadius - 2.0;
+        g_ballAngle = -g_ballAngle;
+    }
 
     // check win conditions
     if (!g_isGameOver) {
@@ -541,7 +547,7 @@ void drawBackground(const unsigned int color) {
 
 void drawEverything() {
     drawBackground(BACKGROUND_COLOR);
+    drawBall(size_t(g_ballPosX), size_t(g_ballPosY), g_ballRadius, BALL_COLOR);
     drawRacket(g_player1PositionX, size_t(g_player1PosY), g_playerWidth, g_playerHeight, PLAYER1_COLOR);
     drawRacket(g_player2PositionX, size_t(g_player2PosY), g_playerWidth, g_playerHeight, PLAYER2_COLOR);
-    drawBall(size_t(g_ballPosX), size_t(g_ballPosY), g_ballRadius, BALL_COLOR);
 }
