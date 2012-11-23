@@ -63,9 +63,9 @@ void resetEverything();
 void update();
 bool hasBallCollidedPlayer1();
 bool hasBallCollidedPlayer2();
-void drawPixelSDL(const size_t posX, const size_t posY, const unsigned int color);
-void drawBall(const size_t posX, const size_t posY, const size_t radius, const unsigned int color);
-void drawRacket(const size_t posX, const size_t posY, const size_t w, const size_t h, const unsigned int color);
+void drawPixelSDL(const int posX, const int posY, const unsigned int color);
+void drawBall(const int posX, const int posY, const size_t radius, const unsigned int color);
+void drawRacket(const int posX, const int posY, const size_t w, const size_t h, const unsigned int color);
 void drawBackground(const unsigned int color);
 void drawEverything();
 
@@ -104,7 +104,7 @@ Mix_Music* g_music;
 
 
 // main function
-int main(int argc, char** argv) {
+int main(int, char**) {
     // introduction
     cout << "  CC322 - Organizacion de Computadoras I" << endl;
     cout << "              .-----------." << endl;
@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
     else
         Mix_PlayMusic(g_music, -1);
 
-    srand(unsigned int(time(0)));
+    srand((unsigned int)(time(0)));
     initializeDimensions();
     resetEverything();
 
@@ -256,6 +256,9 @@ void processEventsSDL(bool& isRunning) {
             case SDLK_DOWN:
                 g_isKeyDownDOWN = true;
                 break;
+
+            default:
+                break;
             }
             break;
 
@@ -276,7 +279,13 @@ void processEventsSDL(bool& isRunning) {
             case SDLK_DOWN:
                 g_isKeyDownDOWN = false;
                 break;
+
+            default:
+                break;
             }
+            break;
+
+        default:
             break;
         }
     }
@@ -406,29 +415,30 @@ bool hasBallCollidedPlayer2() {
     return false;
 }
 
-void drawPixelSDL(const size_t posX, const size_t posY, const unsigned int color) {
+void drawPixelSDL(const int posX, const int posY, const unsigned int color) {
     SDL_Rect rect;
-    rect.x = posX * g_virtualScreenPixelSize;
-    rect.y = posY * g_virtualScreenPixelSize;
-    rect.w = g_virtualScreenPixelSize;
-    rect.h = g_virtualScreenPixelSize;
+    rect.x = Sint16(posX * g_virtualScreenPixelSize);
+    rect.y = Sint16(posY * g_virtualScreenPixelSize);
+    rect.w = Uint16(g_virtualScreenPixelSize);
+    rect.h = Uint16(g_virtualScreenPixelSize);
     SDL_FillRect(g_screen, &rect, color);
 }
 
-void drawBall(const size_t posX, const size_t posY, const size_t radius, const unsigned int color) {
-    int x = 0;
-    int y = radius;
-    int p = 1 - radius;
+void drawBall(const int posX, const int posY, const size_t radius, const unsigned int color) {
+    int x, y, p;
 
     // fill square with background color
-    size_t width = posX + 2 * radius - 2;
-    size_t height = posY + 2 * radius - 2;
-    for (size_t y = posY - radius + 1; y < height; ++y) {
-        for (size_t x = posX - radius + 1; x < width; ++x)
+    int endX = posX + 2 * radius - 2;
+    int endY = posY + 2 * radius - 2;
+    for (y = posY - radius + 1; y < endY; ++y) {
+        for (x = posX - radius + 1; x < endX; ++x)
             drawPixelSDL(x, y, CLEAR_COLOR);
     }
 
     // draw circle
+    x = 0;
+    y = radius;
+    p = 1 - radius;
     while(x <= y) {
         drawPixelSDL(posX + x, posY + y, color);
         drawPixelSDL(posX + x, posY - y, color);
@@ -451,7 +461,7 @@ void drawBall(const size_t posX, const size_t posY, const size_t radius, const u
     }
 }
 
-void drawRacket(const size_t posX, const size_t posY, const size_t w, const size_t h, const unsigned int color) {
+void drawRacket(const int posX, const int posY, const size_t w, const size_t h, const unsigned int color) {
     size_t x, y;
     size_t maxX = posX + w - 1;
     size_t maxY = posY + h - 1;

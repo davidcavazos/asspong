@@ -3,6 +3,12 @@ project(asspong)
 
 set(EXE_NAME asspong)
 
+# Compiler flags
+if (CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Weffc++ -Wconversion -Wswitch-default -Wshadow -Wmissing-include-dirs")
+endif()
+
+
 # Target
 set(SRC_FILES
     main.cpp
