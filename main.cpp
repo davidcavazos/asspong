@@ -39,25 +39,8 @@ using namespace std;
 // constants
 const double PI = 3.1415926535897932384626433832795028841971693993751058;
 
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 600;
-
 const int FRAMERATE_CAP = 60;
 const int MILLISECONDS_CAP = 1000 / FRAMERATE_CAP;
-
-const size_t VIRTUAL_SCREEN_PIXEL_SIZE = 6;
-const size_t VIRTUAL_SCREEN_WIDTH = WINDOW_WIDTH / VIRTUAL_SCREEN_PIXEL_SIZE;
-const size_t VIRTUAL_SCREEN_HEIGHT = WINDOW_HEIGHT / VIRTUAL_SCREEN_PIXEL_SIZE;
-
-const size_t BALL_RADIUS = VIRTUAL_SCREEN_WIDTH / 40;
-const size_t PLAYER_WIDTH = VIRTUAL_SCREEN_WIDTH / 40;
-const size_t PLAYER_HEIGHT = VIRTUAL_SCREEN_HEIGHT / 6;
-
-const double BALL_SPEED_INCREASE = VIRTUAL_SCREEN_WIDTH * 0.05;
-const double PLAYER_SPEED = VIRTUAL_SCREEN_WIDTH * 1.5;
-
-const size_t PLAYER1_POSITION_X = size_t(VIRTUAL_SCREEN_WIDTH * 0.08);
-const size_t PLAYER2_POSITION_X = VIRTUAL_SCREEN_WIDTH - PLAYER1_POSITION_X - PLAYER_WIDTH;
 
 const unsigned int BALL_COLOR =    0xaa2222;
 const unsigned int PLAYER1_COLOR = 0x22aa22;
@@ -70,7 +53,10 @@ const int AUDIO_BUFFER_SIZE = 4096;
 
 
 // function prototypes
+void initializeSDL();
+void shutdownSDL();
 void processEventsSDL(bool& isRunning);
+void initializeDimensions();
 void resetEverything();
 void update();
 bool hasBallCollidedPlayer1();
@@ -81,6 +67,19 @@ void drawRacket(const size_t posX, const size_t posY, const size_t w, const size
 void drawEverything();
 
 // global variables
+int g_windowWidth;
+int g_windowHeight;
+size_t g_virtualScreenPixelSize;
+size_t g_virtualScreenWidth;
+size_t g_virtualScreenHeight;
+size_t g_ballRadius;
+size_t g_playerWidth;
+size_t g_playerHeight;
+double g_ballSpeedIncrease;
+double g_playerSpeed;
+size_t g_player1PositionX;
+size_t g_player2PositionX;
+
 SDL_Surface* g_screen = 0;
 double g_deltaTime;
 double g_player1PosY;
@@ -124,16 +123,8 @@ int main(int argc, char** argv) {
     cout << "Presione [Enter] para continuar...";
     cin.get();
 
-    // SDL initialization
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) { // 0 success, -1 failure
-        cerr << "Unable to initialize SDL: " << SDL_GetError() << endl;
-        return EXIT_FAILURE;
-    }
-    g_screen = SDL_SetVideoMode(WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_HWSURFACE | SDL_DOUBLEBUF);
-    if (g_screen == 0) {
-        cerr << "Unable to create SDL video context: " << SDL_GetError() << endl;
-        return EXIT_FAILURE;
-    }
+    // initialization
+    initializeSDL();
 
     // SDL_mixer initialization
     Mix_OpenAudio(AUDIO_FREQUENCY, MIX_DEFAULT_FORMAT, AUDIO_CHANNELS, AUDIO_BUFFER_SIZE);
@@ -144,6 +135,7 @@ int main(int argc, char** argv) {
         Mix_PlayMusic(g_music, -1);
 
     srand(unsigned int(time(0)));
+    initializeDimensions();
     resetEverything();
 
     g_deltaTime = 0.0;
@@ -186,7 +178,7 @@ int main(int argc, char** argv) {
     // shutdown
     Mix_FreeMusic(g_music);
     Mix_CloseAudio();
-    SDL_Quit();
+    shutdownSDL();
 
     // show winner
     cout << endl;
@@ -197,13 +189,35 @@ int main(int argc, char** argv) {
     else
         cout << "Ganador: Jugador 2 ";
     cout << "(" << g_player1Wins << " : " << g_player2Wins << ")" << endl;
-    cout << "Presione [Enter] para continuar...";
+    cout << "Presione [Enter] para salir...";
     cin.get();
 
     return EXIT_SUCCESS;
 }
 
 
+
+void initializeSDL() {
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) { // 0 success, -1 failure
+        cerr << "Unable to initialize SDL: " << SDL_GetError() << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    const SDL_VideoInfo* info = SDL_GetVideoInfo();
+    g_windowWidth = info->current_w;
+    g_windowHeight = info->current_h;
+
+    g_screen = SDL_SetVideoMode(g_windowWidth, g_windowHeight, info->vfmt->BitsPerPixel, SDL_HWSURFACE | SDL_DOUBLEBUF | SDL_FULLSCREEN);
+    if (g_screen == 0) {
+        cerr << "Unable to create SDL video context: " << SDL_GetError() << endl;
+        exit(EXIT_FAILURE);
+    }
+    SDL_ShowCursor(SDL_FALSE);
+}
+
+void shutdownSDL() {
+    SDL_Quit();
+}
 
 void processEventsSDL(bool& isRunning) {
     SDL_Event event;
@@ -265,12 +279,28 @@ void processEventsSDL(bool& isRunning) {
     }
 }
 
+void initializeDimensions() {
+    g_virtualScreenPixelSize = g_windowWidth / 128;
+    g_virtualScreenWidth = g_windowWidth / g_virtualScreenPixelSize;
+    g_virtualScreenHeight = g_windowHeight / g_virtualScreenPixelSize;
+
+    g_ballRadius = g_virtualScreenWidth / 40;
+    g_playerWidth = g_virtualScreenWidth / 40;
+    g_playerHeight = g_virtualScreenHeight / 6;
+
+    g_ballSpeedIncrease = g_virtualScreenWidth * 0.05;
+    g_playerSpeed = g_virtualScreenWidth * 1.5;
+
+    g_player1PositionX = size_t(g_virtualScreenWidth * 0.08);
+    g_player2PositionX = g_virtualScreenWidth - g_player1PositionX - g_playerWidth;
+}
+
 void resetEverything() {
-    g_player1PosY = (VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT) / 2;
+    g_player1PosY = (g_virtualScreenHeight - g_playerHeight) / 2;
     g_player2PosY = g_player1PosY;
-    g_ballPosX = VIRTUAL_SCREEN_WIDTH / 2;
-    g_ballPosY = VIRTUAL_SCREEN_HEIGHT / 2;
-    g_ballSpeed = VIRTUAL_SCREEN_WIDTH * 0.5;
+    g_ballPosX = g_virtualScreenWidth / 2;
+    g_ballPosY = g_virtualScreenHeight / 2;
+    g_ballSpeed = g_virtualScreenWidth * 0.5;
     g_ballAngle = double(rand()) / double(RAND_MAX) * PI * 0.5 - PI * 0.25;
     if (rand() % 2 == 0)
         g_ballAngle += PI;
@@ -281,24 +311,24 @@ void resetEverything() {
 void update() {
     // update players
     if (g_isKeyDownW) {
-        g_player1PosY -= PLAYER_SPEED * g_deltaTime;
+        g_player1PosY -= g_playerSpeed * g_deltaTime;
         if (g_player1PosY < 0.0)
             g_player1PosY = 0.0;
     }
     if (g_isKeyDownS) {
-        g_player1PosY += PLAYER_SPEED * g_deltaTime;
-        if (g_player1PosY > VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT)
-            g_player1PosY = VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT;
+        g_player1PosY += g_playerSpeed * g_deltaTime;
+        if (g_player1PosY > g_virtualScreenHeight - g_playerHeight)
+            g_player1PosY = g_virtualScreenHeight - g_playerHeight;
     }
     if (g_isKeyDownUP) {
-        g_player2PosY -= PLAYER_SPEED * g_deltaTime;
+        g_player2PosY -= g_playerSpeed * g_deltaTime;
         if (g_player2PosY < 0.0)
             g_player2PosY = 0.0;
     }
     if (g_isKeyDownDOWN) {
-        g_player2PosY += PLAYER_SPEED * g_deltaTime;
-        if (g_player2PosY > VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT)
-            g_player2PosY = VIRTUAL_SCREEN_HEIGHT - PLAYER_HEIGHT;
+        g_player2PosY += g_playerSpeed * g_deltaTime;
+        if (g_player2PosY > g_virtualScreenHeight - g_playerHeight)
+            g_player2PosY = g_virtualScreenHeight - g_playerHeight;
     }
 
     // update ball
@@ -307,29 +337,29 @@ void update() {
 
     // check ball collisions with players
     double distX, distY;
-    if (hasBallCollidedPlayer1() && g_ballPosX > PLAYER1_POSITION_X) {
-        distY = g_player1PosY + PLAYER_HEIGHT / 2 - g_ballPosY;
+    if (hasBallCollidedPlayer1() && g_ballPosX > g_player1PositionX) {
+        distY = g_player1PosY + g_playerHeight / 2 - g_ballPosY;
         distX = g_ballPosX;
         g_ballAngle = atan(distY / distX);
-        g_ballSpeed += BALL_SPEED_INCREASE;
+        g_ballSpeed += g_ballSpeedIncrease;
     }
-    else if (hasBallCollidedPlayer2() && g_ballPosX < PLAYER2_POSITION_X + PLAYER_WIDTH) {
-        distY = g_player2PosY + PLAYER_HEIGHT / 2 - g_ballPosY;
-        distX = VIRTUAL_SCREEN_WIDTH - g_ballPosX;
+    else if (hasBallCollidedPlayer2() && g_ballPosX < g_player2PositionX + g_playerWidth) {
+        distY = g_player2PosY + g_playerHeight / 2 - g_ballPosY;
+        distX = g_virtualScreenWidth - g_ballPosX;
         g_ballAngle = PI - atan(distY / distX);
-        g_ballSpeed += BALL_SPEED_INCREASE;
+        g_ballSpeed += g_ballSpeedIncrease;
     }
-    else if (g_ballPosY < BALL_RADIUS || g_ballPosY > VIRTUAL_SCREEN_HEIGHT - BALL_RADIUS)
+    else if (g_ballPosY < g_ballRadius || g_ballPosY > g_virtualScreenHeight - g_ballRadius)
         g_ballAngle = -g_ballAngle;
 
     // check win conditions
     if (!g_isGameOver) {
-        if (g_ballPosX >= VIRTUAL_SCREEN_WIDTH - BALL_RADIUS) {
+        if (g_ballPosX >= g_virtualScreenWidth - g_ballRadius) {
             cout << "Jugador 1" << endl;
             g_isGameOver = true;
             ++g_player1Wins;
         }
-        else if (g_ballPosX <= BALL_RADIUS) {
+        else if (g_ballPosX <= g_ballRadius) {
             cout << "Jugador 2" << endl;
             g_isGameOver = true;
             ++g_player2Wins;
@@ -338,16 +368,16 @@ void update() {
 }
 
 bool hasBallCollidedPlayer1() {
-    if (g_ballPosX - BALL_RADIUS < PLAYER1_POSITION_X + PLAYER_WIDTH + 1) {
-        if (g_ballPosY >= g_player1PosY && g_ballPosY <= g_player1PosY + PLAYER_HEIGHT) // racket 1 body
+    if (g_ballPosX - g_ballRadius < g_player1PositionX + g_playerWidth + 1) {
+        if (g_ballPosY >= g_player1PosY && g_ballPosY <= g_player1PosY + g_playerHeight) // racket 1 body
             return true;
-        double radiusSqr = BALL_RADIUS * BALL_RADIUS;
-        double distX = PLAYER1_POSITION_X + PLAYER_WIDTH - g_ballPosX;
+        double radiusSqr = g_ballRadius * g_ballRadius;
+        double distX = g_player1PositionX + g_playerWidth - g_ballPosX;
         double distY = g_player1PosY - g_ballPosY;
         double distSqr = distX * distX + distY * distY;
         if (distSqr <= radiusSqr) // racket 1 upper corner
             return true;
-        distY = g_player1PosY + PLAYER_HEIGHT - g_ballPosY;
+        distY = g_player1PosY + g_playerHeight - g_ballPosY;
         distSqr = distX * distX + distY * distY;
         if (distSqr <= radiusSqr) // racket 1 lower corner
             return true;
@@ -356,16 +386,16 @@ bool hasBallCollidedPlayer1() {
 }
 
 bool hasBallCollidedPlayer2() {
-    if (g_ballPosX + BALL_RADIUS > PLAYER2_POSITION_X - 1) {
-        if (g_ballPosY >= g_player2PosY && g_ballPosY <= g_player2PosY + PLAYER_HEIGHT) // racket 2 body
+    if (g_ballPosX + g_ballRadius > g_player2PositionX - 1) {
+        if (g_ballPosY >= g_player2PosY && g_ballPosY <= g_player2PosY + g_playerHeight) // racket 2 body
             return true;
-        double radiusSqr = BALL_RADIUS * BALL_RADIUS;
-        double distX = PLAYER2_POSITION_X - g_ballPosX;
+        double radiusSqr = g_ballRadius * g_ballRadius;
+        double distX = g_player2PositionX - g_ballPosX;
         double distY = g_player2PosY - g_ballPosY;
         double distSqr = distX * distX + distY * distY;
         if (distSqr <= radiusSqr) // racket 2 upper corner
             return true;
-        distY = g_player2PosY + PLAYER_HEIGHT - g_ballPosY;
+        distY = g_player2PosY + g_playerHeight - g_ballPosY;
         distSqr = distX * distX + distY * distY;
         if (distSqr <= radiusSqr) // racket 2 lower corner
             return true;
@@ -375,10 +405,10 @@ bool hasBallCollidedPlayer2() {
 
 void drawPixelSDL(const size_t posX, const size_t posY, const unsigned int color) {
     SDL_Rect rect;
-    rect.x = posX * VIRTUAL_SCREEN_PIXEL_SIZE;
-    rect.y = posY * VIRTUAL_SCREEN_PIXEL_SIZE;
-    rect.w = VIRTUAL_SCREEN_PIXEL_SIZE;
-    rect.h = VIRTUAL_SCREEN_PIXEL_SIZE;
+    rect.x = posX * g_virtualScreenPixelSize;
+    rect.y = posY * g_virtualScreenPixelSize;
+    rect.w = g_virtualScreenPixelSize;
+    rect.h = g_virtualScreenPixelSize;
     SDL_FillRect(g_screen, &rect, color);
 }
 
@@ -424,7 +454,7 @@ void drawRacket(const size_t posX, const size_t posY, const size_t w, const size
 }
 
 void drawEverything() {
-    drawRacket(PLAYER1_POSITION_X, size_t(g_player1PosY), PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER1_COLOR);
-    drawRacket(PLAYER2_POSITION_X, size_t(g_player2PosY), PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER2_COLOR);
-    drawBall(size_t(g_ballPosX), size_t(g_ballPosY), BALL_RADIUS, BALL_COLOR);
+    drawRacket(g_player1PositionX, size_t(g_player1PosY), g_playerWidth, g_playerHeight, PLAYER1_COLOR);
+    drawRacket(g_player2PositionX, size_t(g_player2PosY), g_playerWidth, g_playerHeight, PLAYER2_COLOR);
+    drawBall(size_t(g_ballPosX), size_t(g_ballPosY), g_ballRadius, BALL_COLOR);
 }
