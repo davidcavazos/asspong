@@ -56,7 +56,7 @@ const size_t PLAYER_HEIGHT = VIRTUAL_SCREEN_HEIGHT / 6;
 const double BALL_SPEED_INCREASE = VIRTUAL_SCREEN_WIDTH * 0.05;
 const double PLAYER_SPEED = VIRTUAL_SCREEN_WIDTH * 1.5;
 
-const size_t PLAYER1_POSITION_X = VIRTUAL_SCREEN_WIDTH * 0.08;
+const size_t PLAYER1_POSITION_X = size_t(VIRTUAL_SCREEN_WIDTH * 0.08);
 const size_t PLAYER2_POSITION_X = VIRTUAL_SCREEN_WIDTH - PLAYER1_POSITION_X - PLAYER_WIDTH;
 
 const unsigned int BALL_COLOR =    0xaa2222;
@@ -106,9 +106,9 @@ int main(int argc, char** argv) {
     // introduction
     cout << "          *** Equipo 9 ***" << endl;
     cout << endl;
-    cout << "             ·--------·" << endl;
+    cout << "             .--------." << endl;
     cout << "            /   Pong   \\" << endl;
-    cout << "           ·============·" << endl;
+    cout << "           '============'" << endl;
     cout << endl;
     cout << "Cavazos Woo David" << endl;
     cout << "Corona Garcia Erick Daniel" << endl;
@@ -143,7 +143,7 @@ int main(int argc, char** argv) {
     else
         Mix_PlayMusic(g_music, -1);
 
-    srand(time(0));
+    srand(unsigned int(time(0)));
     resetEverything();
 
     g_deltaTime = 0.0;
@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
         // framerate cap
         g_deltaTime = SDL_GetTicks() - startTime;
         if (MILLISECONDS_CAP > g_deltaTime)
-            SDL_Delay(MILLISECONDS_CAP - g_deltaTime);
+            SDL_Delay(Uint32(MILLISECONDS_CAP - g_deltaTime));
 
         // show framerate
         g_deltaTime = (SDL_GetTicks() - startTime) * 0.001;
@@ -182,6 +182,11 @@ int main(int argc, char** argv) {
                         (g_deltaTime == 0.0? double(FRAMERATE_CAP) : 1.0 / g_deltaTime) << " fps";
         SDL_WM_SetCaption(title.str().c_str(), "");
     }
+
+    // shutdown
+    Mix_FreeMusic(g_music);
+    Mix_CloseAudio();
+    SDL_Quit();
 
     // show winner
     cout << endl;
@@ -192,11 +197,9 @@ int main(int argc, char** argv) {
     else
         cout << "Ganador: Jugador 2 ";
     cout << "(" << g_player1Wins << " : " << g_player2Wins << ")" << endl;
+    cout << "Presione [Enter] para continuar...";
+    cin.get();
 
-    // shutdown
-    Mix_FreeMusic(g_music);
-    Mix_CloseAudio();
-    SDL_Quit();
     return EXIT_SUCCESS;
 }
 
@@ -421,7 +424,7 @@ void drawRacket(const size_t posX, const size_t posY, const size_t w, const size
 }
 
 void drawEverything() {
-    drawRacket(PLAYER1_POSITION_X, g_player1PosY, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER1_COLOR);
-    drawRacket(PLAYER2_POSITION_X, g_player2PosY, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER2_COLOR);
-    drawBall(g_ballPosX, g_ballPosY, BALL_RADIUS, BALL_COLOR);
+    drawRacket(PLAYER1_POSITION_X, size_t(g_player1PosY), PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER1_COLOR);
+    drawRacket(PLAYER2_POSITION_X, size_t(g_player2PosY), PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER2_COLOR);
+    drawBall(size_t(g_ballPosX), size_t(g_ballPosY), BALL_RADIUS, BALL_COLOR);
 }
