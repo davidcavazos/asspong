@@ -42,9 +42,11 @@ const double PI = 3.1415926535897932384626433832795028841971693993751058;
 const int FRAMERATE_CAP = 60;
 const int MILLISECONDS_CAP = 1000 / FRAMERATE_CAP;
 
-const unsigned int BALL_COLOR =    0xaa2222;
-const unsigned int PLAYER1_COLOR = 0x22aa22;
-const unsigned int PLAYER2_COLOR = 0x2222aa;
+const unsigned int CLEAR_COLOR =      0x111111;
+const unsigned int BALL_COLOR =       0x00d636;
+const unsigned int PLAYER1_COLOR =    0x00d636;
+const unsigned int PLAYER2_COLOR =    0x00d636;
+const unsigned int BACKGROUND_COLOR = 0x00d636;
 
 const int AUDIO_FREQUENCY = 44100;
 const int AUDIO_CHANNELS = 2; // stereo
@@ -64,6 +66,7 @@ bool hasBallCollidedPlayer2();
 void drawPixelSDL(const size_t posX, const size_t posY, const unsigned int color);
 void drawBall(const size_t posX, const size_t posY, const size_t radius, const unsigned int color);
 void drawRacket(const size_t posX, const size_t posY, const size_t w, const size_t h, const unsigned int color);
+void drawBackground(const unsigned int color);
 void drawEverything();
 
 // global variables
@@ -103,14 +106,14 @@ Mix_Music* g_music;
 // main function
 int main(int argc, char** argv) {
     // introduction
-    cout << "          *** Equipo 9 ***" << endl;
+    cout << "  CC322 - Organizacion de Computadoras I" << endl;
+    cout << "              .-----------." << endl;
+    cout << "             /   AssPong   \\" << endl;
+    cout << "            '==============='" << endl;
     cout << endl;
-    cout << "             .--------." << endl;
-    cout << "            /   Pong   \\" << endl;
-    cout << "           '============'" << endl;
-    cout << endl;
-    cout << "Cavazos Woo David" << endl;
-    cout << "Corona Garcia Erick Daniel" << endl;
+    cout << "            *** Equipo 9 ***" << endl;
+    cout << "            Cavazos Woo David" << endl;
+    cout << "        Corona Garcia Erick Daniel" << endl;
     cout << endl;
     cout << "Instrucciones:" << endl;
     cout << "[ESC]   Salir" << endl;
@@ -158,7 +161,7 @@ int main(int argc, char** argv) {
         update();
 
         // draw
-        SDL_FillRect(g_screen, 0, 0); // clear screen
+        SDL_FillRect(g_screen, 0, CLEAR_COLOR); // clear screen
         drawEverything();
         SDL_Flip(g_screen); // flip buffers
 
@@ -166,13 +169,13 @@ int main(int argc, char** argv) {
         g_deltaTime = SDL_GetTicks() - startTime;
         if (MILLISECONDS_CAP > g_deltaTime)
             SDL_Delay(Uint32(MILLISECONDS_CAP - g_deltaTime));
+        g_deltaTime = (SDL_GetTicks() - startTime) * 0.001;
 
         // show framerate
-        g_deltaTime = (SDL_GetTicks() - startTime) * 0.001;
-        stringstream title;
-        title << "Pong - " << setprecision(1) << fixed <<
-                        (g_deltaTime == 0.0? double(FRAMERATE_CAP) : 1.0 / g_deltaTime) << " fps";
-        SDL_WM_SetCaption(title.str().c_str(), "");
+//        stringstream title;
+//        title << "Pong - " << setprecision(1) << fixed <<
+//                        (g_deltaTime == 0.0? double(FRAMERATE_CAP) : 1.0 / g_deltaTime) << " fps";
+//        SDL_WM_SetCaption(title.str().c_str(), "");
     }
 
     // shutdown
@@ -312,23 +315,23 @@ void update() {
     // update players
     if (g_isKeyDownW) {
         g_player1PosY -= g_playerSpeed * g_deltaTime;
-        if (g_player1PosY < 0.0)
-            g_player1PosY = 0.0;
+        if (g_player1PosY < 2.0)
+            g_player1PosY = 2.0;
     }
     if (g_isKeyDownS) {
         g_player1PosY += g_playerSpeed * g_deltaTime;
-        if (g_player1PosY > g_virtualScreenHeight - g_playerHeight)
-            g_player1PosY = g_virtualScreenHeight - g_playerHeight;
+        if (g_player1PosY > g_virtualScreenHeight - g_playerHeight - 2.0)
+            g_player1PosY = g_virtualScreenHeight - g_playerHeight - 2.0;
     }
     if (g_isKeyDownUP) {
         g_player2PosY -= g_playerSpeed * g_deltaTime;
-        if (g_player2PosY < 0.0)
-            g_player2PosY = 0.0;
+        if (g_player2PosY < 2.0)
+            g_player2PosY = 2.0;
     }
     if (g_isKeyDownDOWN) {
         g_player2PosY += g_playerSpeed * g_deltaTime;
-        if (g_player2PosY > g_virtualScreenHeight - g_playerHeight)
-            g_player2PosY = g_virtualScreenHeight - g_playerHeight;
+        if (g_player2PosY > g_virtualScreenHeight - g_playerHeight - 2.0)
+            g_player2PosY = g_virtualScreenHeight - g_playerHeight - 2.0;
     }
 
     // update ball
@@ -349,7 +352,7 @@ void update() {
         g_ballAngle = PI - atan(distY / distX);
         g_ballSpeed += g_ballSpeedIncrease;
     }
-    else if (g_ballPosY < g_ballRadius || g_ballPosY > g_virtualScreenHeight - g_ballRadius)
+    else if (g_ballPosY < g_ballRadius + 2.0 || g_ballPosY > g_virtualScreenHeight - g_ballRadius - 2.0)
         g_ballAngle = -g_ballAngle;
 
     // check win conditions
@@ -417,6 +420,15 @@ void drawBall(const size_t posX, const size_t posY, const size_t radius, const u
     int y = radius;
     int p = 1 - radius;
 
+    // fill square with background color
+    size_t width = posX + 2 * radius - 2;
+    size_t height = posY + 2 * radius - 2;
+    for (size_t y = posY - radius + 1; y < height; ++y) {
+        for (size_t x = posX - radius + 1; x < width; ++x)
+            drawPixelSDL(x, y, CLEAR_COLOR);
+    }
+
+    // draw circle
     while(x <= y) {
         drawPixelSDL(posX + x, posY + y, color);
         drawPixelSDL(posX + x, posY - y, color);
@@ -453,7 +465,22 @@ void drawRacket(const size_t posX, const size_t posY, const size_t w, const size
     }
 }
 
+void drawBackground(const unsigned int color) {
+    size_t half = g_virtualScreenWidth / 2;
+    size_t hLineEnd = g_virtualScreenWidth - 1;
+    size_t vLineEnd = g_virtualScreenHeight - 2;
+    for (size_t i = 1; i < hLineEnd; ++i) {
+        drawPixelSDL(i, 1, color);
+        drawPixelSDL(i, vLineEnd, color);
+    }
+    for (size_t i = 2; i < vLineEnd; ++i) {
+        if (i % 8 != 0)
+            drawPixelSDL(half, i, color);
+    }
+}
+
 void drawEverything() {
+    drawBackground(BACKGROUND_COLOR);
     drawRacket(g_player1PositionX, size_t(g_player1PosY), g_playerWidth, g_playerHeight, PLAYER1_COLOR);
     drawRacket(g_player2PositionX, size_t(g_player2PosY), g_playerWidth, g_playerHeight, PLAYER2_COLOR);
     drawBall(size_t(g_ballPosX), size_t(g_ballPosY), g_ballRadius, BALL_COLOR);
