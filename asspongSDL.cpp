@@ -23,29 +23,22 @@
 
 // Music from http://grayscale.scene.pl/msx_archive.php?lang=en
 
-
-// #define USE_ASM_INSTEAD_OF_SDL
-
-
-
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <string>
+#include <cstdio>
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
 #include <SDL/SDL.h>
 #include <SDL/SDL_mixer.h>
 
-using namespace std;
-
+typedef int BOOL;
+const BOOL TRUE = 1;
+const BOOL FALSE = 0;
 
 // constants
 const double PI = 3.1415926535897932384626433832795028841971693993751058;
 
 const int FRAMERATE_CAP = 60;
-const int MILLISECONDS_CAP = 1000 / FRAMERATE_CAP;
+const int MILLISECONDS_CAP = 1000 / 60;
 
 const unsigned int CLEAR_COLOR =      0x111111;
 const unsigned int BALL_COLOR =       0x00d636;
@@ -60,18 +53,18 @@ const int AUDIO_BUFFER_SIZE = 4096;
 
 
 // function prototypes
-void initialize_SDL_ASM();
-void initializeVideoContext_SDL_ASM();
-void shutdown_SDL_ASM();
-void processEvents_SDL_ASM(bool& isRunning);
-void clearScreen_SDL_ASM();
-void drawPixel_SDL_ASM(const int posX, const int posY, const unsigned int color);
+void initialize_SDL();
+void initializeVideoContext_SDL();
+void shutdown_SDL();
+void processEvents_SDL(BOOL* isRunning);
+void clearScreen_SDL();
+void drawPixel_SDL(const int posX, const int posY, const unsigned int color);
 
 void initializeDimensions();
 void resetEverything();
 void update();
-bool hasBallCollidedPlayer1();
-bool hasBallCollidedPlayer2();
+BOOL hasBallCollidedPlayer1();
+BOOL hasBallCollidedPlayer2();
 void drawBall(const int posX, const int posY, const size_t radius, const unsigned int color);
 void drawRacket(const int posX, const int posY, const size_t w, const size_t h, const unsigned int color);
 void drawBackground(const unsigned int color);
@@ -99,55 +92,55 @@ double g_ballPosX;
 double g_ballPosY;
 double g_ballSpeed;
 double g_ballAngle;
-bool g_isGameOver;
-size_t g_player1Wins;
-size_t g_player2Wins;
+BOOL g_isGameOver;
+unsigned int g_player1Wins;
+unsigned int g_player2Wins;
 
-bool g_isKeyDownW;
-bool g_isKeyDownS;
-bool g_isKeyDownUP;
-bool g_isKeyDownDOWN;
+BOOL g_isKeyDownW;
+BOOL g_isKeyDownS;
+BOOL g_isKeyDownUP;
+BOOL g_isKeyDownDOWN;
 
 Mix_Music* g_music;
 
 
 // main function
-int main(int, char**) {
+int main(int argc, char** argv) {
     // introduction
-    cout << "    +~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+" << endl;
-    cout << "    |               CC322 - Organizacion de Computadoras I                 |" << endl;
-    cout << "    |                            .-----------.                             |" << endl;
-    cout << "    |                           /   AssPong   \\                            |" << endl;
-    cout << "    |                          '==============='                           |" << endl;
-    cout << "    |                                                                      |" << endl;
-    cout << "    |                          *** Equipo 9 ***                            |" << endl;
-    cout << "    |                          Cavazos Woo David                           |" << endl;
-    cout << "    |                      Corona Garcia Erick Daniel                      |" << endl;
-    cout << "    |                                                                      |" << endl;
-    cout << "    |    Instrucciones:                                                    |" << endl;
-    cout << "    |        [ESC]   Salir                                                 |" << endl;
-    cout << "    |        [SPACE] Reset                                                 |" << endl;
-    cout << "    |        [w]     Mover jugador 1 arriba                                |" << endl;
-    cout << "    |        [s]     Mover jugador 1 abajo                                 |" << endl;
-    cout << "    |        [UP]    Mover jugador 2 arriba                                |" << endl;
-    cout << "    |        [DOWN]  Mover jugador 2 abajo                                 |" << endl;
-    cout << "    |                                                                      |" << endl;
-    cout << "    +~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+" << endl;
+    printf("    +~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+\n");
+    printf("    |               CC322 - Organizacion de Computadoras I                 |\n");
+    printf("    |                            .-----------.                             |\n");
+    printf("    |                           /   AssPong   \\                            |\n");
+    printf("    |                          '==============='                           |\n");
+    printf("    |                                                                      |\n");
+    printf("    |                          *** Equipo 9 ***                            |\n");
+    printf("    |                          Cavazos Woo David                           |\n");
+    printf("    |                      Corona Garcia Erick Daniel                      |\n");
+    printf("    |                                                                      |\n");
+    printf("    |    Instrucciones:                                                    |\n");
+    printf("    |        [ESC]   Salir                                                 |\n");
+    printf("    |        [SPACE] Reset                                                 |\n");
+    printf("    |        [w]     Mover jugador 1 arriba                                |\n");
+    printf("    |        [s]     Mover jugador 1 abajo                                 |\n");
+    printf("    |        [UP]    Mover jugador 2 arriba                                |\n");
+    printf("    |        [DOWN]  Mover jugador 2 abajo                                 |\n");
+    printf("    |                                                                      |\n");
+    printf("    +~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+\n");
 
-    initialize_SDL_ASM();
-
-    cout << "Presione [Enter] para continuar...";
-    cin.get();
+    initialize_SDL();
 
     // SDL_mixer initialization
     Mix_OpenAudio(AUDIO_FREQUENCY, MIX_DEFAULT_FORMAT, AUDIO_CHANNELS, AUDIO_BUFFER_SIZE);
     g_music = Mix_LoadMUS("still_alive.ogg");
 
-    initializeVideoContext_SDL_ASM();
+    printf("Presione [Enter] para continuar...");
+    getchar();
+
+    initializeVideoContext_SDL();
 
     // play music
     if (g_music == 0)
-        cerr << "Unable to load music: " << Mix_GetError() << endl;
+        printf("Unable to load music: %s", Mix_GetError());
     else
         Mix_PlayMusic(g_music, -1);
 
@@ -159,32 +152,30 @@ int main(int, char**) {
     g_player1Wins = 0;
     g_player2Wins = 0;
 
-    g_isKeyDownW = false;
-    g_isKeyDownS = false;
-    g_isKeyDownUP = false;
-    g_isKeyDownDOWN = false;
+    g_isKeyDownW = FALSE;
+    g_isKeyDownS = FALSE;
+    g_isKeyDownUP = FALSE;
+    g_isKeyDownDOWN = FALSE;
 
     // main loop
     Uint32 startTime;
-    bool isRunning = true;
+    BOOL isRunning = TRUE;
     while (isRunning) {
         startTime = SDL_GetTicks();
 
         // update
-        processEvents_SDL_ASM(isRunning);
+        processEvents_SDL(&isRunning);
         update();
 
         // draw
-        clearScreen_SDL_ASM();
+        clearScreen_SDL();
         drawEverything();
-#ifndef USE_ASM_INSTEAD_OF_SDL
         SDL_Flip(g_screen); // flip buffers
-#endif
 
         // framerate cap
         g_deltaTime = SDL_GetTicks() - startTime;
         if (MILLISECONDS_CAP > g_deltaTime)
-            SDL_Delay(Uint32(MILLISECONDS_CAP - g_deltaTime));
+            SDL_Delay((Uint32)(MILLISECONDS_CAP - g_deltaTime));
         g_deltaTime = (SDL_GetTicks() - startTime) * 0.001;
 
         // show framerate
@@ -197,81 +188,66 @@ int main(int, char**) {
     // shutdown
     Mix_FreeMusic(g_music);
     Mix_CloseAudio();
-    shutdown_SDL_ASM();
+    shutdown_SDL();
 
     // show winner
-    cout << endl;
-    cout << "                       .--------------------------------." << endl;
-    cout << "                      /   ";
+    printf("\n");
+    printf("                       .--------------------------------.\n");
+    printf("                      /   ");
     if (g_player1Wins == g_player2Wins)
-        cout << "  ~~~~ Empate ~~~~ ";
+        printf("  ~~~~ Empate ~~~~ ");
     else if (g_player1Wins > g_player2Wins)
-        cout << "Ganador: Jugador 1 ";
+        printf("Ganador: Jugador 1 ");
     else
-        cout << "Ganador: Jugador 2 ";
-    cout << "(" << setw(2) << g_player1Wins << " : " << setw(2) << g_player2Wins << ")   \\" << endl;
-    cout << "                     '===================================='" << endl;
-    cout << "Presione [Enter] para salir...";
-    cin.get();
+        printf("Ganador: Jugador 2 ");
+    printf("(%2u : %2u)   \\\n", g_player1Wins, g_player2Wins);
+    printf("                     '===================================='\n");
+    printf("Presione [Enter] para salir...");
+    getchar();
 
     return EXIT_SUCCESS;
 }
 
 
 
-void initialize_SDL_ASM() {
-#ifdef USE_ASM_INSTEAD_OF_SDL
-    cout << "Using ASM context" << endl;
-#else
-    cout << "Using SDL context" << endl;
+void initialize_SDL() {
+    printf("Using SDL context\n");
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) { // 0 success, -1 failure
-        cerr << "Unable to initialize SDL: " << SDL_GetError() << endl;
+        printf("Unable to initialize SDL: %s", SDL_GetError());
         exit(EXIT_FAILURE);
     }
-#endif
 }
 
-void initializeVideoContext_SDL_ASM() {
-#ifdef USE_ASM_INSTEAD_OF_SDL
-    g_windowWidth = 800;
-    g_windowHeight = 600;
-#else
+void initializeVideoContext_SDL() {
     const SDL_VideoInfo* info = SDL_GetVideoInfo();
     g_windowWidth = info->current_w;
     g_windowHeight = info->current_h;
 
     g_screen = SDL_SetVideoMode(g_windowWidth, g_windowHeight, info->vfmt->BitsPerPixel, SDL_HWSURFACE | SDL_DOUBLEBUF | SDL_FULLSCREEN);
     if (g_screen == 0) {
-        cerr << "Unable to create SDL video context: " << SDL_GetError() << endl;
+        printf("Unable to create SDL video context: %s", SDL_GetError());
         exit(EXIT_FAILURE);
     }
     SDL_ShowCursor(SDL_FALSE);
-#endif
 }
 
-void shutdown_SDL_ASM() {
-#ifdef USE_ASM_INSTEAD_OF_SDL
-#else
+void shutdown_SDL() {
     SDL_Quit();
-#endif
 }
 
-void processEvents_SDL_ASM(bool& isRunning) {
-#ifdef USE_ASM_INSTEAD_OF_SDL
-    isRunning = false;
-#else
+void processEvents_SDL(BOOL* isRunning) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
         case SDL_QUIT:
-            isRunning = false;
+            *isRunning = FALSE;
             break;
 
         case SDL_KEYDOWN:
             switch (event.key.keysym.sym) {
             // quit
             case SDLK_ESCAPE:
-                isRunning = false;
+                *isRunning = FALSE;
                 break;
             // reset
             case SDLK_SPACE:
@@ -280,18 +256,18 @@ void processEvents_SDL_ASM(bool& isRunning) {
 
             // player 1
             case SDLK_w:
-                g_isKeyDownW = true;
+                g_isKeyDownW = TRUE;
                 break;
             case SDLK_s:
-                g_isKeyDownS = true;
+                g_isKeyDownS = TRUE;
                 break;
 
             // player 2
             case SDLK_UP:
-                g_isKeyDownUP = true;
+                g_isKeyDownUP = TRUE;
                 break;
             case SDLK_DOWN:
-                g_isKeyDownDOWN = true;
+                g_isKeyDownDOWN = TRUE;
                 break;
 
             default:
@@ -303,18 +279,18 @@ void processEvents_SDL_ASM(bool& isRunning) {
             switch (event.key.keysym.sym) {
             // player 1
             case SDLK_w:
-                g_isKeyDownW = false;
+                g_isKeyDownW = FALSE;
                 break;
             case SDLK_s:
-                g_isKeyDownS = false;
+                g_isKeyDownS = FALSE;
                 break;
 
             // player 2
             case SDLK_UP:
-                g_isKeyDownUP = false;
+                g_isKeyDownUP = FALSE;
                 break;
             case SDLK_DOWN:
-                g_isKeyDownDOWN = false;
+                g_isKeyDownDOWN = FALSE;
                 break;
 
             default:
@@ -326,32 +302,25 @@ void processEvents_SDL_ASM(bool& isRunning) {
             break;
         }
     }
-#endif
 }
 
-void clearScreen_SDL_ASM() {
-#ifdef USE_ASM_INSTEAD_OF_SDL
-#else
+void clearScreen_SDL() {
     SDL_FillRect(g_screen, 0, CLEAR_COLOR);
-#endif
 }
 
-void drawPixel_SDL_ASM(const int posX, const int posY, const unsigned int color) {
-#ifdef USE_ASM_INSTEAD_OF_SDL
-#else
+void drawPixel_SDL(const int posX, const int posY, const unsigned int color) {
     SDL_Rect rect;
-    rect.x = Sint16(posX * g_virtualScreenPixelSize);
-    rect.y = Sint16(posY * g_virtualScreenPixelSize);
-    rect.w = Uint16(g_virtualScreenPixelSize);
-    rect.h = Uint16(g_virtualScreenPixelSize);
+    rect.x = (Sint16)(posX * g_virtualScreenPixelSize);
+    rect.y = (Sint16)(posY * g_virtualScreenPixelSize);
+    rect.w = (Uint16)(g_virtualScreenPixelSize);
+    rect.h = (Uint16)(g_virtualScreenPixelSize);
     SDL_FillRect(g_screen, &rect, color);
-#endif
 }
 
 
 
 void initializeDimensions() {
-    g_virtualScreenPixelSize = g_windowWidth / 128;
+    g_virtualScreenPixelSize = g_windowWidth / 160;
     g_virtualScreenWidth = g_windowWidth / g_virtualScreenPixelSize;
     g_virtualScreenHeight = g_windowHeight / g_virtualScreenPixelSize;
 
@@ -360,9 +329,9 @@ void initializeDimensions() {
     g_playerHeight = g_virtualScreenHeight / 6;
 
     g_ballSpeedIncrease = g_virtualScreenWidth * 0.05;
-    g_playerSpeed = g_virtualScreenWidth * 1.5;
+    g_playerSpeed = g_virtualScreenWidth * 1.3;
 
-    g_player1PositionX = size_t(g_virtualScreenWidth * 0.08);
+    g_player1PositionX = (size_t)(g_virtualScreenWidth * 0.08);
     g_player2PositionX = g_virtualScreenWidth - g_player1PositionX - g_playerWidth;
 }
 
@@ -372,11 +341,11 @@ void resetEverything() {
     g_ballPosX = g_virtualScreenWidth / 2;
     g_ballPosY = g_virtualScreenHeight / 2;
     g_ballSpeed = g_virtualScreenWidth * 0.5;
-    g_ballAngle = double(rand()) / double(RAND_MAX) * PI * 0.5 - PI * 0.25;
+    g_ballAngle = (double)(rand()) / (double)(RAND_MAX) * PI * 0.5 - PI * 0.25;
     if (rand() % 2 == 0)
         g_ballAngle += PI;
 
-    g_isGameOver = false;
+    g_isGameOver = FALSE;
 }
 
 void update() {
@@ -413,12 +382,14 @@ void update() {
         distX = g_ballPosX;
         g_ballAngle = atan(distY / distX);
         g_ballSpeed += g_ballSpeedIncrease;
+        g_ballPosX = g_player1PositionX + g_playerWidth + g_ballRadius;
     }
     else if (hasBallCollidedPlayer2() && g_ballPosX < g_player2PositionX + g_playerWidth) {
         distY = g_player2PosY + g_playerHeight / 2 - g_ballPosY;
         distX = g_virtualScreenWidth - g_ballPosX;
         g_ballAngle = PI - atan(distY / distX);
         g_ballSpeed += g_ballSpeedIncrease;
+        g_ballPosX = g_player2PositionX - g_ballRadius - 1;
     }
     else if (g_ballPosY < g_ballRadius + 2.0) {
         g_ballPosY = g_ballRadius + 2.0;
@@ -432,63 +403,63 @@ void update() {
     // check win conditions
     if (!g_isGameOver) {
         if (g_ballPosX >= g_virtualScreenWidth - g_ballRadius) {
-            cout << "Jugador 1" << endl;
-            g_isGameOver = true;
+            printf("Jugador 1\n");
+            g_isGameOver = TRUE;
             ++g_player1Wins;
         }
         else if (g_ballPosX <= g_ballRadius) {
-            cout << "Jugador 2" << endl;
-            g_isGameOver = true;
+            printf("Jugador 2\n");
+            g_isGameOver = TRUE;
             ++g_player2Wins;
         }
     }
 }
 
-bool hasBallCollidedPlayer1() {
+BOOL hasBallCollidedPlayer1() {
     if (g_ballPosX - g_ballRadius < g_player1PositionX + g_playerWidth + 1) {
         if (g_ballPosY >= g_player1PosY && g_ballPosY <= g_player1PosY + g_playerHeight) // racket 1 body
-            return true;
+            return TRUE;
         double radiusSqr = g_ballRadius * g_ballRadius;
         double distX = g_player1PositionX + g_playerWidth - g_ballPosX;
         double distY = g_player1PosY - g_ballPosY;
         double distSqr = distX * distX + distY * distY;
         if (distSqr <= radiusSqr) // racket 1 upper corner
-            return true;
+            return TRUE;
         distY = g_player1PosY + g_playerHeight - g_ballPosY;
         distSqr = distX * distX + distY * distY;
         if (distSqr <= radiusSqr) // racket 1 lower corner
-            return true;
+            return TRUE;
     }
-    return false;
+    return FALSE;
 }
 
-bool hasBallCollidedPlayer2() {
+BOOL hasBallCollidedPlayer2() {
     if (g_ballPosX + g_ballRadius > g_player2PositionX - 1) {
         if (g_ballPosY >= g_player2PosY && g_ballPosY <= g_player2PosY + g_playerHeight) // racket 2 body
-            return true;
+            return TRUE;
         double radiusSqr = g_ballRadius * g_ballRadius;
         double distX = g_player2PositionX - g_ballPosX;
         double distY = g_player2PosY - g_ballPosY;
         double distSqr = distX * distX + distY * distY;
         if (distSqr <= radiusSqr) // racket 2 upper corner
-            return true;
+            return TRUE;
         distY = g_player2PosY + g_playerHeight - g_ballPosY;
         distSqr = distX * distX + distY * distY;
         if (distSqr <= radiusSqr) // racket 2 lower corner
-            return true;
+            return TRUE;
     }
-    return false;
+    return FALSE;
 }
 
 void drawBall(const int posX, const int posY, const size_t radius, const unsigned int color) {
     int x, y, p;
 
     // fill square with background color
-    int endX = posX + 2 * radius - 2;
-    int endY = posY + 2 * radius - 2;
+    int endX = posX + 2 * radius - 4;
+    int endY = posY + 2 * radius - 4;
     for (y = posY - radius + 1; y < endY; ++y) {
         for (x = posX - radius + 1; x < endX; ++x)
-            drawPixel_SDL_ASM(x, y, CLEAR_COLOR);
+            drawPixel_SDL(x, y, CLEAR_COLOR);
     }
 
     // draw circle
@@ -496,14 +467,14 @@ void drawBall(const int posX, const int posY, const size_t radius, const unsigne
     y = radius;
     p = 1 - radius;
     while(x <= y) {
-        drawPixel_SDL_ASM(posX + x, posY + y, color);
-        drawPixel_SDL_ASM(posX + x, posY - y, color);
-        drawPixel_SDL_ASM(posX - x, posY + y, color);
-        drawPixel_SDL_ASM(posX - x, posY - y, color);
-        drawPixel_SDL_ASM(posX + y, posY + x, color);
-        drawPixel_SDL_ASM(posX + y, posY - x, color);
-        drawPixel_SDL_ASM(posX - y, posY + x, color);
-        drawPixel_SDL_ASM(posX - y, posY - x, color);
+        drawPixel_SDL(posX + x, posY + y, color);
+        drawPixel_SDL(posX + x, posY - y, color);
+        drawPixel_SDL(posX - x, posY + y, color);
+        drawPixel_SDL(posX - x, posY - y, color);
+        drawPixel_SDL(posX + y, posY + x, color);
+        drawPixel_SDL(posX + y, posY - x, color);
+        drawPixel_SDL(posX - y, posY + x, color);
+        drawPixel_SDL(posX - y, posY - x, color);
 
         if(p < 0) {
             ++x;
@@ -522,12 +493,12 @@ void drawRacket(const int posX, const int posY, const size_t w, const size_t h, 
     size_t maxX = posX + w - 1;
     size_t maxY = posY + h - 1;
     for (x = posX; x <= maxX; ++x) {
-        drawPixel_SDL_ASM(x, posY, color);
-        drawPixel_SDL_ASM(x, maxY, color);
+        drawPixel_SDL(x, posY, color);
+        drawPixel_SDL(x, maxY, color);
     }
     for (y = posY + 1; y <= maxY; ++y) {
-        drawPixel_SDL_ASM(posX, y, color);
-        drawPixel_SDL_ASM(maxX, y, color);
+        drawPixel_SDL(posX, y, color);
+        drawPixel_SDL(maxX, y, color);
     }
 }
 
@@ -535,19 +506,20 @@ void drawBackground(const unsigned int color) {
     size_t half = g_virtualScreenWidth / 2;
     size_t hLineEnd = g_virtualScreenWidth - 1;
     size_t vLineEnd = g_virtualScreenHeight - 2;
-    for (size_t i = 1; i < hLineEnd; ++i) {
-        drawPixel_SDL_ASM(i, 1, color);
-        drawPixel_SDL_ASM(i, vLineEnd, color);
+    size_t i;
+    for (i = 1; i < hLineEnd; ++i) {
+        drawPixel_SDL(i, 1, color);
+        drawPixel_SDL(i, vLineEnd, color);
     }
-    for (size_t i = 2; i < vLineEnd; ++i) {
+    for (i = 2; i < vLineEnd; ++i) {
         if (i % 8 != 0)
-            drawPixel_SDL_ASM(half, i, color);
+            drawPixel_SDL(half, i, color);
     }
 }
 
 void drawEverything() {
     drawBackground(BACKGROUND_COLOR);
-    drawBall(size_t(g_ballPosX), size_t(g_ballPosY), g_ballRadius, BALL_COLOR);
-    drawRacket(g_player1PositionX, size_t(g_player1PosY), g_playerWidth, g_playerHeight, PLAYER1_COLOR);
-    drawRacket(g_player2PositionX, size_t(g_player2PosY), g_playerWidth, g_playerHeight, PLAYER2_COLOR);
+    drawBall((size_t)(g_ballPosX), (size_t)(g_ballPosY), g_ballRadius, BALL_COLOR);
+    drawRacket(g_player1PositionX, (size_t)(g_player1PosY), g_playerWidth, g_playerHeight, PLAYER1_COLOR);
+    drawRacket(g_player2PositionX, (size_t)(g_player2PosY), g_playerWidth, g_playerHeight, PLAYER2_COLOR);
 }

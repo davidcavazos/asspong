@@ -23,17 +23,10 @@
 
 // Music from http://grayscale.scene.pl/msx_archive.php?lang=en
 
-
-// #define USE_ASM_INSTEAD_OF_SDL
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_mixer.h>
 
 typedef int BOOL;
 const BOOL TRUE = 1;
@@ -51,19 +44,16 @@ const unsigned int PLAYER1_COLOR =    0x00d636;
 const unsigned int PLAYER2_COLOR =    0x00d636;
 const unsigned int BACKGROUND_COLOR = 0x00d636;
 
-const int AUDIO_FREQUENCY = 44100;
-const int AUDIO_CHANNELS = 2; // stereo
-const int AUDIO_BUFFER_SIZE = 4096;
-
-
+const char* PLAY_MUSIC = "./asspong_player still_alive.ogg &";
+const char* STOP_MUSIC = "killall asspong_player";
 
 // function prototypes
-void initialize_SDL_ASM();
-void initializeVideoContext_SDL_ASM();
-void shutdown_SDL_ASM();
-void processEvents_SDL_ASM(BOOL* isRunning);
-void clearScreen_SDL_ASM();
-void drawPixel_SDL_ASM(const int posX, const int posY, const unsigned int color);
+void initialize_ASM();
+void initializeVideoContext_ASM();
+void shutdown_ASM();
+void processEvents_ASM(BOOL* isRunning);
+void clearScreen_ASM();
+void drawPixel_ASM(const int posX, const int posY, const unsigned int color);
 
 void initializeDimensions();
 void resetEverything();
@@ -89,7 +79,6 @@ double g_playerSpeed;
 size_t g_player1PositionX;
 size_t g_player2PositionX;
 
-SDL_Surface* g_screen = 0;
 double g_deltaTime;
 double g_player1PosY;
 double g_player2PosY;
@@ -98,15 +87,14 @@ double g_ballPosY;
 double g_ballSpeed;
 double g_ballAngle;
 BOOL g_isGameOver;
-size_t g_player1Wins;
-size_t g_player2Wins;
+unsigned int g_player1Wins;
+unsigned int g_player2Wins;
 
 BOOL g_isKeyDownW;
 BOOL g_isKeyDownS;
 BOOL g_isKeyDownUP;
 BOOL g_isKeyDownDOWN;
 
-Mix_Music* g_music;
 
 
 // main function
@@ -132,22 +120,13 @@ int main(int argc, char** argv) {
     printf("    |                                                                      |\n");
     printf("    +~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+\n");
 
-    initialize_SDL_ASM();
+    initialize_ASM();
 
     printf("Presione [Enter] para continuar...");
     getchar();
 
-    // SDL_mixer initialization
-    Mix_OpenAudio(AUDIO_FREQUENCY, MIX_DEFAULT_FORMAT, AUDIO_CHANNELS, AUDIO_BUFFER_SIZE);
-    g_music = Mix_LoadMUS("still_alive.ogg");
-
-    initializeVideoContext_SDL_ASM();
-
-    // play music
-    if (g_music == 0)
-        printf("Unable to load music: %s", Mix_GetError());
-    else
-        Mix_PlayMusic(g_music, -1);
+    system(PLAY_MUSIC);
+    initializeVideoContext_ASM();
 
     srand((unsigned int)(time(0)));
     initializeDimensions();
@@ -163,27 +142,27 @@ int main(int argc, char** argv) {
     g_isKeyDownDOWN = FALSE;
 
     // main loop
-    Uint32 startTime;
+//     Uint32 startTime;
     BOOL isRunning = TRUE;
     while (isRunning) {
-        startTime = SDL_GetTicks();
+//         startTime = SDL_GetTicks();
 
         // update
-        processEvents_SDL_ASM(&isRunning);
+        processEvents_ASM(&isRunning);
         update();
 
         // draw
-        clearScreen_SDL_ASM();
+        clearScreen_ASM();
         drawEverything();
-#ifndef USE_ASM_INSTEAD_OF_SDL
-        SDL_Flip(g_screen); // flip buffers
-#endif
 
         // framerate cap
-        g_deltaTime = SDL_GetTicks() - startTime;
-        if (MILLISECONDS_CAP > g_deltaTime)
-            SDL_Delay((Uint32)(MILLISECONDS_CAP - g_deltaTime));
-        g_deltaTime = (SDL_GetTicks() - startTime) * 0.001;
+
+        // use clock() and CLOCKS_PER_SEC
+
+//         g_deltaTime = SDL_GetTicks() - startTime;
+//         if (MILLISECONDS_CAP > g_deltaTime)
+//             SDL_Delay((Uint32)(MILLISECONDS_CAP - g_deltaTime));
+//         g_deltaTime = (SDL_GetTicks() - startTime) * 0.001;
 
         // show framerate
 //        stringstream title;
@@ -193,9 +172,8 @@ int main(int argc, char** argv) {
     }
 
     // shutdown
-    Mix_FreeMusic(g_music);
-    Mix_CloseAudio();
-    shutdown_SDL_ASM();
+    shutdown_ASM();
+    system(STOP_MUSIC);
 
     // show winner
     printf("\n");
@@ -207,7 +185,7 @@ int main(int argc, char** argv) {
         printf("Ganador: Jugador 1 ");
     else
         printf("Ganador: Jugador 2 ");
-    printf("(%2d : %2d)   \\\n", g_player1Wins, g_player2Wins);
+    printf("(%2u : %2u)   \\\n", g_player1Wins, g_player2Wins);
     printf("                     '===================================='\n");
     printf("Presione [Enter] para salir...");
     getchar();
@@ -217,139 +195,33 @@ int main(int argc, char** argv) {
 
 
 
-void initialize_SDL_ASM() {
-#ifdef USE_ASM_INSTEAD_OF_SDL
+void initialize_ASM() {
     printf("Using ASM context\n");
-#else
-    printf("Using SDL context\n");
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) { // 0 success, -1 failure
-        printf("Unable to initialize SDL: %s", SDL_GetError());
-        exit(EXIT_FAILURE);
-    }
-#endif
 }
 
-void initializeVideoContext_SDL_ASM() {
-#ifdef USE_ASM_INSTEAD_OF_SDL
+void initializeVideoContext_ASM() {
     g_windowWidth = 800;
     g_windowHeight = 600;
-#else
-    const SDL_VideoInfo* info = SDL_GetVideoInfo();
-    g_windowWidth = info->current_w;
-    g_windowHeight = info->current_h;
-
-    g_screen = SDL_SetVideoMode(g_windowWidth, g_windowHeight, info->vfmt->BitsPerPixel, SDL_HWSURFACE | SDL_DOUBLEBUF | SDL_FULLSCREEN);
-    if (g_screen == 0) {
-        printf("Unable to create SDL video context: %s", SDL_GetError());
-        exit(EXIT_FAILURE);
-    }
-    SDL_ShowCursor(SDL_FALSE);
-#endif
 }
 
-void shutdown_SDL_ASM() {
-#ifdef USE_ASM_INSTEAD_OF_SDL
-#else
-    SDL_Quit();
-#endif
+void shutdown_ASM() {
 }
 
-void processEvents_SDL_ASM(BOOL* isRunning) {
-#ifdef USE_ASM_INSTEAD_OF_SDL
-    isRunning = FALSE;
-#else
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        switch (event.type) {
-        case SDL_QUIT:
-            *isRunning = FALSE;
-            break;
-
-        case SDL_KEYDOWN:
-            switch (event.key.keysym.sym) {
-            // quit
-            case SDLK_ESCAPE:
-                *isRunning = FALSE;
-                break;
-            // reset
-            case SDLK_SPACE:
-                resetEverything();
-                break;
-
-            // player 1
-            case SDLK_w:
-                g_isKeyDownW = TRUE;
-                break;
-            case SDLK_s:
-                g_isKeyDownS = TRUE;
-                break;
-
-            // player 2
-            case SDLK_UP:
-                g_isKeyDownUP = TRUE;
-                break;
-            case SDLK_DOWN:
-                g_isKeyDownDOWN = TRUE;
-                break;
-
-            default:
-                break;
-            }
-            break;
-
-        case SDL_KEYUP:
-            switch (event.key.keysym.sym) {
-            // player 1
-            case SDLK_w:
-                g_isKeyDownW = FALSE;
-                break;
-            case SDLK_s:
-                g_isKeyDownS = FALSE;
-                break;
-
-            // player 2
-            case SDLK_UP:
-                g_isKeyDownUP = FALSE;
-                break;
-            case SDLK_DOWN:
-                g_isKeyDownDOWN = FALSE;
-                break;
-
-            default:
-                break;
-            }
-            break;
-
-        default:
-            break;
-        }
-    }
-#endif
+void processEvents_ASM(BOOL* isRunning) {
+    getchar();
+    *isRunning = FALSE;
 }
 
-void clearScreen_SDL_ASM() {
-#ifdef USE_ASM_INSTEAD_OF_SDL
-#else
-    SDL_FillRect(g_screen, 0, CLEAR_COLOR);
-#endif
+void clearScreen_ASM() {
 }
 
-void drawPixel_SDL_ASM(const int posX, const int posY, const unsigned int color) {
-#ifdef USE_ASM_INSTEAD_OF_SDL
-#else
-    SDL_Rect rect;
-    rect.x = (Sint16)(posX * g_virtualScreenPixelSize);
-    rect.y = (Sint16)(posY * g_virtualScreenPixelSize);
-    rect.w = (Uint16)(g_virtualScreenPixelSize);
-    rect.h = (Uint16)(g_virtualScreenPixelSize);
-    SDL_FillRect(g_screen, &rect, color);
-#endif
+void drawPixel_ASM(const int posX, const int posY, const unsigned int color) {
 }
 
 
 
 void initializeDimensions() {
-    g_virtualScreenPixelSize = g_windowWidth / 128;
+    g_virtualScreenPixelSize = g_windowWidth / 160;
     g_virtualScreenWidth = g_windowWidth / g_virtualScreenPixelSize;
     g_virtualScreenHeight = g_windowHeight / g_virtualScreenPixelSize;
 
@@ -358,7 +230,7 @@ void initializeDimensions() {
     g_playerHeight = g_virtualScreenHeight / 6;
 
     g_ballSpeedIncrease = g_virtualScreenWidth * 0.05;
-    g_playerSpeed = g_virtualScreenWidth * 1.5;
+    g_playerSpeed = g_virtualScreenWidth * 1.3;
 
     g_player1PositionX = (size_t)(g_virtualScreenWidth * 0.08);
     g_player2PositionX = g_virtualScreenWidth - g_player1PositionX - g_playerWidth;
@@ -411,12 +283,14 @@ void update() {
         distX = g_ballPosX;
         g_ballAngle = atan(distY / distX);
         g_ballSpeed += g_ballSpeedIncrease;
+        g_ballPosX = g_player1PositionX + g_playerWidth + g_ballRadius;
     }
     else if (hasBallCollidedPlayer2() && g_ballPosX < g_player2PositionX + g_playerWidth) {
         distY = g_player2PosY + g_playerHeight / 2 - g_ballPosY;
         distX = g_virtualScreenWidth - g_ballPosX;
         g_ballAngle = PI - atan(distY / distX);
         g_ballSpeed += g_ballSpeedIncrease;
+        g_ballPosX = g_player2PositionX - g_ballRadius - 1;
     }
     else if (g_ballPosY < g_ballRadius + 2.0) {
         g_ballPosY = g_ballRadius + 2.0;
@@ -482,11 +356,11 @@ void drawBall(const int posX, const int posY, const size_t radius, const unsigne
     int x, y, p;
 
     // fill square with background color
-    int endX = posX + 2 * radius - 2;
-    int endY = posY + 2 * radius - 2;
+    int endX = posX + 2 * radius - 4;
+    int endY = posY + 2 * radius - 4;
     for (y = posY - radius + 1; y < endY; ++y) {
         for (x = posX - radius + 1; x < endX; ++x)
-            drawPixel_SDL_ASM(x, y, CLEAR_COLOR);
+            drawPixel_ASM(x, y, CLEAR_COLOR);
     }
 
     // draw circle
@@ -494,14 +368,14 @@ void drawBall(const int posX, const int posY, const size_t radius, const unsigne
     y = radius;
     p = 1 - radius;
     while(x <= y) {
-        drawPixel_SDL_ASM(posX + x, posY + y, color);
-        drawPixel_SDL_ASM(posX + x, posY - y, color);
-        drawPixel_SDL_ASM(posX - x, posY + y, color);
-        drawPixel_SDL_ASM(posX - x, posY - y, color);
-        drawPixel_SDL_ASM(posX + y, posY + x, color);
-        drawPixel_SDL_ASM(posX + y, posY - x, color);
-        drawPixel_SDL_ASM(posX - y, posY + x, color);
-        drawPixel_SDL_ASM(posX - y, posY - x, color);
+        drawPixel_ASM(posX + x, posY + y, color);
+        drawPixel_ASM(posX + x, posY - y, color);
+        drawPixel_ASM(posX - x, posY + y, color);
+        drawPixel_ASM(posX - x, posY - y, color);
+        drawPixel_ASM(posX + y, posY + x, color);
+        drawPixel_ASM(posX + y, posY - x, color);
+        drawPixel_ASM(posX - y, posY + x, color);
+        drawPixel_ASM(posX - y, posY - x, color);
 
         if(p < 0) {
             ++x;
@@ -520,12 +394,12 @@ void drawRacket(const int posX, const int posY, const size_t w, const size_t h, 
     size_t maxX = posX + w - 1;
     size_t maxY = posY + h - 1;
     for (x = posX; x <= maxX; ++x) {
-        drawPixel_SDL_ASM(x, posY, color);
-        drawPixel_SDL_ASM(x, maxY, color);
+        drawPixel_ASM(x, posY, color);
+        drawPixel_ASM(x, maxY, color);
     }
     for (y = posY + 1; y <= maxY; ++y) {
-        drawPixel_SDL_ASM(posX, y, color);
-        drawPixel_SDL_ASM(maxX, y, color);
+        drawPixel_ASM(posX, y, color);
+        drawPixel_ASM(maxX, y, color);
     }
 }
 
@@ -535,12 +409,12 @@ void drawBackground(const unsigned int color) {
     size_t vLineEnd = g_virtualScreenHeight - 2;
     size_t i;
     for (i = 1; i < hLineEnd; ++i) {
-        drawPixel_SDL_ASM(i, 1, color);
-        drawPixel_SDL_ASM(i, vLineEnd, color);
+        drawPixel_ASM(i, 1, color);
+        drawPixel_ASM(i, vLineEnd, color);
     }
     for (i = 2; i < vLineEnd; ++i) {
         if (i % 8 != 0)
-            drawPixel_SDL_ASM(half, i, color);
+            drawPixel_ASM(half, i, color);
     }
 }
 

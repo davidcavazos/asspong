@@ -3,15 +3,18 @@ project(asspong)
 
 # Compiler flags
 if (CMAKE_COMPILER_IS_GNUCXX)
-#     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Weffc++ -Wconversion -Wswitch-default -Wshadow -Wmissing-include-dirs")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra")
     set(CMAKE_C_FLAGS "-Wall -Wextra -lm")
 endif()
 
-add_executable(asspong main.c)
+add_executable(asspongSDL asspongSDL.cpp)
+add_executable(asspongASM asspongASM.c)
+add_executable(asspong_player player.cpp)
 
 # Link libraries
 find_package(SDL REQUIRED)
 find_package(SDL_mixer REQUIRED)
 
 include_directories(${SDL_INCLUDE_DIR} ${SDLMIXER_INCLUDE_DIR})
-target_link_libraries(asspong ${SDL_LIBRARY} ${SDLMIXER_LIBRARY})
+target_link_libraries(asspongSDL ${SDL_LIBRARY} ${SDLMIXER_LIBRARY})
+target_link_libraries(asspong_player ${SDL_LIBRARY} ${SDLMIXER_LIBRARY})
