@@ -98,7 +98,8 @@ BOOL g_isKeyDownDOWN;
 
 
 // main function
-int main(int argc, char** argv) {
+int main(void) {
+    BOOL isRunning = TRUE;
     // introduction
     printf("    +~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+\n");
     printf("    |               CC322 - Organizacion de Computadoras I                 |\n");
@@ -143,7 +144,6 @@ int main(int argc, char** argv) {
 
     // main loop
 //     Uint32 startTime;
-    BOOL isRunning = TRUE;
     while (isRunning) {
 //         startTime = SDL_GetTicks();
 
@@ -193,15 +193,34 @@ int main(int argc, char** argv) {
     return EXIT_SUCCESS;
 }
 
-
-
 void initialize_ASM() {
     printf("Using ASM context\n");
+    // Set video mode
+    _asm {
+        mov ah, 00h // Video mode function
+        mov al, 12h // Select VGA/ATI VIP, 16-color, 640x480
+        int 10h
+    }
+}
+
+void clearScreen_ASM() {
+    initialize_ASM();
+}
+
+void drawPixel_ASM(const int posX, const int posY, const unsigned int color) {
+    _asm {
+        mov ax, color;
+        mov ah, 0ch // Write dot on screen function
+        mov bh, 00h // Dispay page
+        mov cx, posX // Column
+        mov dx, posY // Row
+        int 10h
+    }
 }
 
 void initializeVideoContext_ASM() {
-    g_windowWidth = 800;
-    g_windowHeight = 600;
+    g_windowWidth = 640;
+    g_windowHeight = 480;
 }
 
 void shutdown_ASM() {
@@ -211,13 +230,6 @@ void processEvents_ASM(BOOL* isRunning) {
     getchar();
     *isRunning = FALSE;
 }
-
-void clearScreen_ASM() {
-}
-
-void drawPixel_ASM(const int posX, const int posY, const unsigned int color) {
-}
-
 
 
 void initializeDimensions() {
@@ -250,6 +262,8 @@ void resetEverything() {
 }
 
 void update() {
+    double distX, distY;
+
     // update players
     if (g_isKeyDownW) {
         g_player1PosY -= g_playerSpeed * g_deltaTime;
@@ -277,7 +291,6 @@ void update() {
     g_ballPosY -= g_ballSpeed * sin(g_ballAngle) * g_deltaTime;
 
     // check ball collisions with players
-    double distX, distY;
     if (hasBallCollidedPlayer1() && g_ballPosX > g_player1PositionX) {
         distY = g_player1PosY + g_playerHeight / 2 - g_ballPosY;
         distX = g_ballPosX;
@@ -317,13 +330,13 @@ void update() {
 }
 
 BOOL hasBallCollidedPlayer1() {
+    double radiusSqr = g_ballRadius * g_ballRadius;
+    double distX = g_player1PositionX + g_playerWidth - g_ballPosX;
+    double distY = g_player1PosY - g_ballPosY;
+    double distSqr = distX * distX + distY * distY;
     if (g_ballPosX - g_ballRadius < g_player1PositionX + g_playerWidth + 1) {
         if (g_ballPosY >= g_player1PosY && g_ballPosY <= g_player1PosY + g_playerHeight) // racket 1 body
             return TRUE;
-        double radiusSqr = g_ballRadius * g_ballRadius;
-        double distX = g_player1PositionX + g_playerWidth - g_ballPosX;
-        double distY = g_player1PosY - g_ballPosY;
-        double distSqr = distX * distX + distY * distY;
         if (distSqr <= radiusSqr) // racket 1 upper corner
             return TRUE;
         distY = g_player1PosY + g_playerHeight - g_ballPosY;
@@ -335,13 +348,13 @@ BOOL hasBallCollidedPlayer1() {
 }
 
 BOOL hasBallCollidedPlayer2() {
+    double radiusSqr = g_ballRadius * g_ballRadius;
+    double distX = g_player2PositionX - g_ballPosX;
+    double distY = g_player2PosY - g_ballPosY;
+    double distSqr = distX * distX + distY * distY;
     if (g_ballPosX + g_ballRadius > g_player2PositionX - 1) {
         if (g_ballPosY >= g_player2PosY && g_ballPosY <= g_player2PosY + g_playerHeight) // racket 2 body
             return TRUE;
-        double radiusSqr = g_ballRadius * g_ballRadius;
-        double distX = g_player2PositionX - g_ballPosX;
-        double distY = g_player2PosY - g_ballPosY;
-        double distSqr = distX * distX + distY * distY;
         if (distSqr <= radiusSqr) // racket 2 upper corner
             return TRUE;
         distY = g_player2PosY + g_playerHeight - g_ballPosY;
