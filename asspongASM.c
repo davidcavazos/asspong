@@ -55,6 +55,7 @@ void processEvents_ASM(BOOL* isRunning);
 void clearScreen_ASM();
 void drawPixel_ASM(const int posX, const int posY, const unsigned int color);
 
+void pause_ASM();
 void initializeDimensions();
 void resetEverything();
 void update();
@@ -124,7 +125,7 @@ int main(void) {
     initialize_ASM();
 
     printf("Presione [Enter] para continuar...");
-    getchar();
+    pause_ASM();
 
     system(PLAY_MUSIC);
     initializeVideoContext_ASM();
@@ -188,7 +189,7 @@ int main(void) {
     printf("(%2u : %2u)   \\\n", g_player1Wins, g_player2Wins);
     printf("                     '===================================='\n");
     printf("Presione [Enter] para salir...");
-    getchar();
+    pause_ASM();
 
     return EXIT_SUCCESS;
 }
@@ -227,7 +228,7 @@ void shutdown_ASM() {
 }
 
 void processEvents_ASM(BOOL* isRunning) {
-    getchar();
+    pause_ASM();
     *isRunning = FALSE;
 }
 
@@ -436,4 +437,11 @@ void drawEverything() {
     drawBall((size_t)(g_ballPosX), (size_t)(g_ballPosY), g_ballRadius, BALL_COLOR);
     drawRacket(g_player1PositionX, (size_t)(g_player1PosY), g_playerWidth, g_playerHeight, PLAYER1_COLOR);
     drawRacket(g_player2PositionX, (size_t)(g_player2PosY), g_playerWidth, g_playerHeight, PLAYER2_COLOR);
+}
+
+void pause_ASM() {
+    _asm {
+        mov ah, 08h // Keyboard input, no echo function
+        int 21h // Keyboard input
+    }
 }
