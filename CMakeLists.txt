@@ -8,7 +8,6 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 add_executable(asspongSDL asspongSDL.cpp)
-add_executable(asspongASM asspongASM.c)
 add_executable(asspong_player asspong_player.cpp)
 
 # Link libraries
