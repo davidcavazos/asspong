@@ -40,11 +40,11 @@ const double PI = 3.1415926535897932384626433832795028841971693993751058;
 const int FRAMERATE_CAP = 60;
 const double MILLISECONDS_CAP = 1000.0 / 60.0;
 
-const unsigned int CLEAR_COLOR =      0x111111;
-const unsigned int BALL_COLOR =       0x00d636;
-const unsigned int PLAYER1_COLOR =    0x00d636;
-const unsigned int PLAYER2_COLOR =    0x00d636;
-const unsigned int BACKGROUND_COLOR = 0x00d636;
+const unsigned int CLEAR_COLOR =      0;
+const unsigned int BALL_COLOR =       2;
+const unsigned int PLAYER1_COLOR =    2;
+const unsigned int PLAYER2_COLOR =    2;
+const unsigned int BACKGROUND_COLOR = 2;
 
 const char* PLAY_MUSIC = "start asspong_player.exe still_alive.ogg"; //"./asspong_player still_alive.ogg &";
 const char* STOP_MUSIC = "taskkill /F /IM asspong_player.exe"; //"killall asspong_player";
