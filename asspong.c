@@ -247,34 +247,34 @@ void processEvents_ASM(BOOL* isRunning) {
 //     }
 
     while (kbhit()) {
-    key = getch();
-    key = tolower(key);
-    switch (key) {
-    case 27: // ESC
-//     case 'q':
-        *isRunning = FALSE;
-        break;
-    case ' ':
-        resetEverything();
-        break;
+        key = getch();
+        key = tolower(key);
+        switch (key) {
+        case 27: // ESC
+    //     case 'q':
+            *isRunning = FALSE;
+            break;
+        case ' ':
+            resetEverything();
+            break;
 
-    case 'w':
-        g_isKeyDownW = TRUE;
-        break;
-    case 's':
-        g_isKeyDownS = TRUE;
-        break;
+        case 'w':
+            g_isKeyDownW = TRUE;
+            break;
+        case 's':
+            g_isKeyDownS = TRUE;
+            break;
 
-    case 'o':
-        g_isKeyDownO = TRUE;
-        break;
-    case 'l':
-        g_isKeyDownL = TRUE;
-        break;
+        case 'o':
+            g_isKeyDownO = TRUE;
+            break;
+        case 'l':
+            g_isKeyDownL = TRUE;
+            break;
 
-    default:
-        break;
-    }
+        default:
+            break;
+        }
     }
 }
 
@@ -291,7 +291,7 @@ void initializeDimensions() {
     g_playerHeight = g_virtualScreenHeight / 6;
 
     factor1 = g_virtualScreenWidth;
-    factor2 = 0.05;
+    factor2 = 0.1;
     _asm {
         fld factor1 // push factor1 into FPU register stack st(1)
         fld factor2 // push factor2 into FPU register stack st(2)
@@ -299,9 +299,9 @@ void initializeDimensions() {
         fstp factor2 // store and pop factor2 from st(1)
         fstp g_ballSpeedIncrease // store and pop product from st(1)
     }
-    //g_ballSpeedIncrease = g_virtualScreenWidth * 0.05;
+    g_ballSpeedIncrease = g_virtualScreenWidth * 0.1;
     factor1 = g_virtualScreenWidth;
-    factor2 = 1.0;
+    factor2 = 0.6;
     _asm {
         fld factor1
         fld factor2
@@ -309,7 +309,7 @@ void initializeDimensions() {
         fstp factor2
         fstp g_playerSpeed
     }
-    //g_playerSpeed = g_virtualScreenWidth * 1.0;
+    g_playerSpeed = g_virtualScreenWidth * 0.6;
 
     g_player1PositionX = (size_t)(g_virtualScreenWidth * 0.08);
     g_player2PositionX = g_virtualScreenWidth - g_player1PositionX - g_playerWidth;
@@ -320,7 +320,7 @@ void resetEverything() {
     g_player2PosY = g_player1PosY;
     g_ballPosX = g_virtualScreenWidth / 2;
     g_ballPosY = g_virtualScreenHeight / 2;
-    g_ballSpeed = g_virtualScreenWidth * 0.5;
+    g_ballSpeed = g_virtualScreenWidth * 0.2;
     g_ballAngle = (double)(rand()) / (double)(RAND_MAX) * PI * 0.5 - PI * 0.25;
     if (rand() % 2 == 0)
         g_ballAngle += PI;
