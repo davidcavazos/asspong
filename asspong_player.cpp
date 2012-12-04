@@ -22,6 +22,7 @@
  */
 
 #include <iostream>
+#include <string>
 #include <cstdlib>
 #include <SDL/SDL.h>
 #include <SDL/SDL_mixer.h>
@@ -33,12 +34,16 @@ const int AUDIO_CHANNELS = 2; // stereo
 const int AUDIO_BUFFER_SIZE = 4096;
 
 int main(int argc, char** argv) {
-	cout << "AssPong Music :D" << endl;
+    string fileName;
 
-	if (argc < 2) {
-        cerr << "Error: too few arguments, specify audio file" << endl;
-        return EXIT_FAILURE;
+    cout << "AssPong Music :D" << endl;
+
+    if (argc < 2) {
+        cout << "Warning: too few arguments, using still_alive.ogg" << endl;
+        fileName = "still_alive.ogg";
     }
+    else
+        fileName = string(argv[1]);
 
     // SDL initialization
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) { // 0 success, -1 failure
@@ -48,7 +53,7 @@ int main(int argc, char** argv) {
 
     // SDL_mixer initialization
     Mix_OpenAudio(AUDIO_FREQUENCY, MIX_DEFAULT_FORMAT, AUDIO_CHANNELS, AUDIO_BUFFER_SIZE);
-    Mix_Music* music = Mix_LoadMUS(argv[1]);
+    Mix_Music* music = Mix_LoadMUS(fileName.c_str());
 
     // play music
     if (music == 0)
