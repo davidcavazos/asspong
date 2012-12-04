@@ -125,7 +125,11 @@ int main(void) {
     printf("    +~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+\n");
     printf("Usando contexto de ASM\n");
     printf("Presione [Enter] para continuar...");
-    getchar();
+    _asm {
+        mov ah, 10h
+        int 16h
+    }
+
 
     system(PLAY_MUSIC);
     initializeVideoContext_ASM();
@@ -187,7 +191,10 @@ int main(void) {
     printf("(%2u : %2u)   \\\n", g_player1Wins, g_player2Wins);
     printf("                     '===================================='\n");
     printf("Presione [Enter] para salir...");
-    getchar();
+    _asm {
+        mov ah, 00h
+        int 16h
+    }
 
     return EXIT_SUCCESS;
 }
@@ -273,6 +280,8 @@ void processEvents_ASM(BOOL* isRunning) {
 
 
 void initializeDimensions() {
+    double factor1, factor2;
+
     g_virtualScreenPixelSize = g_windowWidth / 160;
     g_virtualScreenWidth = g_windowWidth / g_virtualScreenPixelSize;
     g_virtualScreenHeight = g_windowHeight / g_virtualScreenPixelSize;
@@ -281,8 +290,26 @@ void initializeDimensions() {
     g_playerWidth = g_virtualScreenWidth / 40;
     g_playerHeight = g_virtualScreenHeight / 6;
 
-    g_ballSpeedIncrease = g_virtualScreenWidth * 0.05;
-    g_playerSpeed = g_virtualScreenWidth * 1.0;
+    factor1 = g_virtualScreenWidth;
+    factor2 = 0.05;
+    _asm {
+        fld factor1 // push factor1 into FPU register stack st(1)
+        fld factor2 // push factor2 into FPU register stack st(2)
+        fmul st(0), st(1) // multiply
+        fstp factor2 // store and pop factor2 from st(1)
+        fstp g_ballSpeedIncrease // store and pop product from st(1)
+    }
+    //g_ballSpeedIncrease = g_virtualScreenWidth * 0.05;
+    factor1 = g_virtualScreenWidth;
+    factor2 = 1.0;
+    _asm {
+        fld factor1
+        fld factor2
+        fmul st(0), st(1)
+        fstp factor2
+        fstp g_playerSpeed
+    }
+    //g_playerSpeed = g_virtualScreenWidth * 1.0;
 
     g_player1PositionX = (size_t)(g_virtualScreenWidth * 0.08);
     g_player2PositionX = g_virtualScreenWidth - g_player1PositionX - g_playerWidth;
