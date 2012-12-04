@@ -27,7 +27,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include <dos.h> // for void delay(unsigned int)
+#include <dos.h>        // for delay()
+#include <conio.h>      // for kbhit() and getch()
 
 
 typedef int BOOL;
@@ -118,8 +119,8 @@ int main(void) {
     printf("    |        [SPACE] Reset                                                 |\n");
     printf("    |        [w]     Mover jugador 1 arriba                                |\n");
     printf("    |        [s]     Mover jugador 1 abajo                                 |\n");
-    printf("    |        [UP]    Mover jugador 2 arriba                                |\n");
-    printf("    |        [DOWN]  Mover jugador 2 abajo                                 |\n");
+    printf("    |        [o]     Mover jugador 2 arriba                                |\n");
+    printf("    |        [l]     Mover jugador 2 abajo                                 |\n");
     printf("    |                                                                      |\n");
     printf("    +~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+\n");
     printf("Usando contexto de ASM\n");
@@ -147,6 +148,10 @@ int main(void) {
         startTime = clock();
 
         // update
+        g_isKeyDownW = FALSE;
+        g_isKeyDownS = FALSE;
+        g_isKeyDownO = FALSE;
+        g_isKeyDownL = FALSE;
         processEvents_ASM(&isRunning);
         update();
 
@@ -155,14 +160,14 @@ int main(void) {
         drawEverything();
 
         // framerate cap
-        g_deltaTime = MILLISECONDS_CAP;
-        delay((unsigned int)(g_deltaTime));
-        g_deltaTime *= 0.001;
+//         g_deltaTime = MILLISECONDS_CAP;
+//         delay((unsigned int)MILLISECONDS_CAP);
+//         g_deltaTime *= 0.001;
 
-//         g_deltaTime = (clock() - startTime) / CLOCKS_PER_SEC;
-//         if (MILLISECONDS_CAP > g_deltaTime)
-//             delay((unsigned int)(MILLISECONDS_CAP - g_deltaTime));
-//         g_deltaTime = (clock() - startTime) / CLOCKS_PER_SEC * 0.001;
+        g_deltaTime = (double)(clock() - startTime) / (double)CLOCKS_PER_SEC * 1000.0;
+        if (MILLISECONDS_CAP > g_deltaTime)
+            delay((unsigned int)(MILLISECONDS_CAP - g_deltaTime));
+        g_deltaTime = (double)(clock() - startTime) / (double)CLOCKS_PER_SEC;
     }
 
     // shutdown
@@ -188,17 +193,19 @@ int main(void) {
 }
 
 void clearScreen_ASM() {
-    initializeVideoContext_ASM();
+    _asm {
+        mov ah, 00h     // Video mode function
+        mov al, 12h     // Select VGA/ATI VIP, 16-color, 640x480
+        int 10h
+    }
 }
 
 void drawPixel_ASM(const int posX, const int posY, const unsigned int color) {
-    int startX = posX * g_virtualScreenPixelSize;
-    int startY = posY * g_virtualScreenPixelSize;
-    int endX = startX + g_virtualScreenPixelSize;
-    int endY = startY + g_virtualScreenPixelSize;
     int x, y;
-    for (x = startX; x < endX; ++x) {
-        for (y = startY; y < endY; ++y) {
+    int endX = posX * g_virtualScreenPixelSize + g_virtualScreenPixelSize;
+    int endY = posY * g_virtualScreenPixelSize + g_virtualScreenPixelSize;
+    for (x = posX * g_virtualScreenPixelSize; x < endX; ++x) {
+        for (y = posY * g_virtualScreenPixelSize; y < endY; ++y) {
             _asm {
                 mov ax, color;
                 mov ah, 0ch     // Write dot on screen function
@@ -223,15 +230,21 @@ void initializeVideoContext_ASM() {
 }
 
 void processEvents_ASM(BOOL* isRunning) {
-    char key;
-    _asm {
-        mov ah, 00h     // Get keystroke
-        int 16h
-        mov key, al     // Get character
-    }
+    char key = 0;
+//     if (!kbhit())
+//         return;
+//     _asm {
+//         mov ah, 00h     // Get keystroke
+//         int 16h
+//         mov key, al     // Get character
+//     }
+
+    while (kbhit()) {
+    key = getch();
     key = tolower(key);
     switch (key) {
-    case 'q':
+    case 27: // ESC
+//     case 'q':
         *isRunning = FALSE;
         break;
     case ' ':
@@ -254,6 +267,7 @@ void processEvents_ASM(BOOL* isRunning) {
 
     default:
         break;
+    }
     }
 }
 
@@ -346,11 +360,13 @@ void update() {
             printf("Jugador 1\n");
             g_isGameOver = TRUE;
             ++g_player1Wins;
+            g_ballSpeed = 0.0;
         }
         else if (g_ballPosX <= g_ballRadius) {
             printf("Jugador 2\n");
             g_isGameOver = TRUE;
             ++g_player2Wins;
+            g_ballSpeed = 0.0;
         }
     }
 }
@@ -392,11 +408,14 @@ BOOL hasBallCollidedPlayer2() {
 }
 
 void drawBall(const int posX, const int posY, const size_t radius, const unsigned int color) {
-    int x, y, p;
+    int x, y, p, endX, endY;
+
+    if (posX < 0 || posX > g_virtualScreenWidth || posY < 0 || posY > g_virtualScreenWidth)
+        return;
 
     // fill square with background color
-    int endX = posX + 2 * radius - 4;
-    int endY = posY + 2 * radius - 4;
+    endX = posX + 2 * radius - 4;
+    endY = posY + 2 * radius - 4;
     for (y = posY - radius + 1; y < endY; ++y) {
         for (x = posX - radius + 1; x < endX; ++x)
             drawPixel_ASM(x, y, CLEAR_COLOR);
