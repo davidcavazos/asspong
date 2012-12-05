@@ -211,7 +211,7 @@ int main(int argc, char** argv) {
 
 
 void initialize_SDL() {
-    printf("Using SDL context\n");
+    printf("Usando contexto de SDL\n");
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) { // 0 success, -1 failure
         printf("Unable to initialize SDL: %s", SDL_GetError());
         exit(EXIT_FAILURE);

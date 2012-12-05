@@ -44,8 +44,8 @@ const unsigned int PLAYER1_COLOR =    0x00d636;
 const unsigned int PLAYER2_COLOR =    0x00d636;
 const unsigned int BACKGROUND_COLOR = 0x00d636;
 
-const char* PLAY_MUSIC = "./asspong_player still_alive.ogg &";
-const char* STOP_MUSIC = "killall asspong_player";
+const char* PLAY_MUSIC = "start asspong_player.exe still_alive.ogg"; //"./asspong_player still_alive.ogg &";
+const char* STOP_MUSIC = "taskkill /F /IM asspong_player.exe"; //"killall asspong_player";
 
 // function prototypes
 void initialize_ASM();
@@ -194,17 +194,11 @@ int main(void) {
 }
 
 void initialize_ASM() {
-    printf("Using ASM context\n");
-    // Set video mode
-    _asm {
-        mov ah, 00h // Video mode function
-        mov al, 12h // Select VGA/ATI VIP, 16-color, 640x480
-        int 10h
-    }
+    printf("Usando contexto de ASM\n");
 }
 
 void clearScreen_ASM() {
-    initialize_ASM();
+    initializeVideoContext_ASM();
 }
 
 void drawPixel_ASM(const int posX, const int posY, const unsigned int color) {
@@ -221,6 +215,12 @@ void drawPixel_ASM(const int posX, const int posY, const unsigned int color) {
 void initializeVideoContext_ASM() {
     g_windowWidth = 640;
     g_windowHeight = 480;
+    // Set video mode
+    _asm {
+        mov ah, 00h // Video mode function
+        mov al, 12h // Select VGA/ATI VIP, 16-color, 640x480
+        int 10h
+    }
 }
 
 void shutdown_ASM() {

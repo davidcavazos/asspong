@@ -33,7 +33,9 @@ const int AUDIO_CHANNELS = 2; // stereo
 const int AUDIO_BUFFER_SIZE = 4096;
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
+	cout << "AssPong Music :D" << endl;
+
+	if (argc < 2) {
         cerr << "Error: too few arguments, specify audio file" << endl;
         return EXIT_FAILURE;
     }

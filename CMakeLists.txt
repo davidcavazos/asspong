@@ -9,7 +9,7 @@ endif()
 
 add_executable(asspongSDL asspongSDL.cpp)
 add_executable(asspongASM asspongASM.c)
-add_executable(asspong_player player.cpp)
+add_executable(asspong_player asspong_player.cpp)
 
 # Link libraries
 find_package(SDL REQUIRED)
