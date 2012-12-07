@@ -406,13 +406,11 @@ void update() {
             printf("Jugador 1\n");
             g_isGameOver = TRUE;
             ++g_player1Wins;
-            resetEverything();
         }
         else if (g_ballPosX <= g_ballRadius) {
             printf("Jugador 2\n");
             g_isGameOver = TRUE;
             ++g_player2Wins;
-            resetEverything();
         }
     }
 }
