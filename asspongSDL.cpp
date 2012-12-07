@@ -105,7 +105,7 @@ Mix_Music* g_music;
 
 
 // main function
-int main(void) {
+int main(int, char**) {
     // introduction
     printf("    +~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+\n");
     printf("    |               CC322 - Organizacion de Computadoras I                 |\n");
