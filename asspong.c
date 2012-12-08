@@ -28,7 +28,7 @@
 #include <math.h>
 #include <time.h>
 #include <dos.h>        // for delay()
-#include <conio.h>      // for kbhit() and getch()
+#include <conio.h>      // for kbhit()
 
 
 typedef int BOOL;
@@ -47,8 +47,8 @@ const unsigned int PLAYER1_COLOR =    2;
 const unsigned int PLAYER2_COLOR =    2;
 const unsigned int BACKGROUND_COLOR = 2;
 
-const char* PLAY_MUSIC = "start asspong_player.exe still_alive.ogg"; //"./asspong_player still_alive.ogg &";
-const char* STOP_MUSIC = "taskkill /F /IM asspong_player.exe"; //"killall asspong_player";
+const char* PLAY_MUSIC = "play.bat";//"start asspong_player.exe still_alive.ogg"; //"./asspong_player still_alive.ogg &";
+const char* STOP_MUSIC = "stop.bat";//"taskkill /F /IM asspong_player.exe"; //"killall asspong_player";
 
 // function prototypes
 void initializeVideoContext_ASM();
@@ -129,7 +129,6 @@ int main(void) {
         mov ah, 10h
         int 16h
     }
-
 
     system(PLAY_MUSIC);
     initializeVideoContext_ASM();
@@ -238,16 +237,13 @@ void initializeVideoContext_ASM() {
 
 void processEvents_ASM(BOOL* isRunning) {
     char key = 0;
-//     if (!kbhit())
-//         return;
-//     _asm {
-//         mov ah, 00h     // Get keystroke
-//         int 16h
-//         mov key, al     // Get character
-//     }
-
     while (kbhit()) {
-        key = getch();
+        //key = getch();
+        _asm {
+            mov ah, 00h     // Get keystroke
+            int 16h
+            mov key, al     // Get character
+        }
         key = tolower(key);
         switch (key) {
         case 27: // ESC
@@ -291,7 +287,7 @@ void initializeDimensions() {
     g_playerHeight = g_virtualScreenHeight / 6;
 
     factor1 = g_virtualScreenWidth;
-    factor2 = 0.1;
+    factor2 = 0.05;
     _asm {
         fld factor1 // push factor1 into FPU register stack st(1)
         fld factor2 // push factor2 into FPU register stack st(2)
@@ -299,9 +295,9 @@ void initializeDimensions() {
         fstp factor2 // store and pop factor2 from st(1)
         fstp g_ballSpeedIncrease // store and pop product from st(1)
     }
-    g_ballSpeedIncrease = g_virtualScreenWidth * 0.1;
+    g_ballSpeedIncrease = g_virtualScreenWidth * 0.05;
     factor1 = g_virtualScreenWidth;
-    factor2 = 0.6;
+    factor2 = 0.5;
     _asm {
         fld factor1
         fld factor2
@@ -309,7 +305,7 @@ void initializeDimensions() {
         fstp factor2
         fstp g_playerSpeed
     }
-    g_playerSpeed = g_virtualScreenWidth * 0.6;
+    g_playerSpeed = g_virtualScreenWidth * 0.5;
 
     g_player1PositionX = (size_t)(g_virtualScreenWidth * 0.08);
     g_player2PositionX = g_virtualScreenWidth - g_player1PositionX - g_playerWidth;
