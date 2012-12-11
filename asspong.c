@@ -358,7 +358,7 @@ void update() {
     if (hasBallCollidedPlayer1() && g_ballPosX > g_player1PositionX) {
         _asm {
             mov ah,09h
-            lea dx,	beep
+            lea dx, beep
             int 21h
         }
         distY = g_player1PosY + g_playerHeight / 2 - g_ballPosY;
@@ -370,7 +370,7 @@ void update() {
     else if (hasBallCollidedPlayer2() && g_ballPosX < g_player2PositionX + g_playerWidth) {
         _asm {
             mov ah,09h
-            lea dx,	beep
+            lea dx, beep
             int 21h
         }
         distY = g_player2PosY + g_playerHeight / 2 - g_ballPosY;
